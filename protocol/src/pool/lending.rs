@@ -1,11 +1,18 @@
-pub mod structs;
 
 use scrypto::prelude::*;
 use common::*;
 use common::utils::assert_resource;
-use keeper::*;
+use keeper::UnstakeData;
 use interest::InterestModel;
-pub use self::structs::*;
+
+
+#[derive(ScryptoSbor)]
+pub struct FixedEpochBond {
+    pub epoch_at: u64,
+    pub interest: Decimal,
+    pub global_id_list: List<NonFungibleGlobalId>
+}
+
 
 #[blueprint]
 #[types(
@@ -486,13 +493,16 @@ mod lend_pool {
 
         fn calc_interest_rate(&self, supply: Decimal, variable_borrow: Decimal, stable_borrow: Decimal) -> (Decimal, Decimal, Decimal){
 
-            info!("calc_interest_rate.0, var:{}, stable:{}, supply:{}", variable_borrow, stable_borrow, supply);
+            
+            let (mature_bond, _) = self.get_mature_bonds();
+            let bond = self.bond_amount.checked_sub(mature_bond).unwrap();
             let total_debt = variable_borrow.checked_add(stable_borrow).unwrap();
             let borrow_ratio = if supply == Decimal::ZERO { Decimal::ZERO } else { total_debt.checked_div(supply).unwrap() };
             let stable_ratio = if total_debt == Decimal::ZERO {Decimal::ZERO } else { stable_borrow.checked_div(total_debt).unwrap() };
-            let bond_ratio = if total_debt == Decimal::ZERO { Decimal::ZERO } else { self.bond_amount.checked_div(total_debt).unwrap() };
+            let bond_ratio = if total_debt == Decimal::ZERO { Decimal::ZERO } else { bond.checked_div(total_debt).unwrap() };
+            info!("calc_interest_rate.0, var:{}, stable:{}, bond:{},{}, supply:{}", variable_borrow, stable_borrow, self.bond_amount, bond, supply);
             
-            info!("calc_interest_rate.1, borrow_ratio:{}, stable_ratio:{}", borrow_ratio, stable_ratio);
+            info!("calc_interest_rate.1, borrow_ratio:{}, stable_ratio:{}, bond_ratio:{}", borrow_ratio, stable_ratio, bond_ratio);
             let def_interest_model: Global<DefInterestModel> = Global::<DefInterestModel>::from(INTEREST_COMPONENT);
             let (variable_rate, stable_rate) = def_interest_model.get_interest_rate(borrow_ratio, stable_ratio, bond_ratio, self.interest_model.clone());
             info!("calc_interest_rate.2, variable_rate:{}, stable_rate:{} ", variable_rate, stable_rate);

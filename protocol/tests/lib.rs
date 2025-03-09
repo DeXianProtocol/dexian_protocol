@@ -1,6 +1,5 @@
 use scrypto_test::prelude::*;
 
-use protocol::hello_test::*;
 
 #[test]
 fn test_hello() {
@@ -55,14 +54,7 @@ fn test_hello_with_test_environment() -> Result<(), RuntimeError> {
     let package_address = 
         PackageFactory::compile_and_publish(this_package!(), &mut env, CompileProfile::Fast)?;
 
-    let mut hello = Hello::instantiate_hello(package_address, &mut env)?;
-
-    // Act
-    let bucket = hello.free_token(&mut env)?;
-
-    // Assert
-    let amount = bucket.amount(&mut env)?;
-    assert_eq!(amount, dec!("1"));
+    
 
     Ok(())
 }

@@ -48,14 +48,16 @@ mod def_interest_model{
 
         pub fn get_interest_rate(&self, 
             borrow_ratio: Decimal, 
-            stable_ratio: Decimal,
-            bond_ratio: Decimal,
+            _stable_ratio: Decimal,
+            _bond_ratio: Decimal,
             model: InterestModel
         ) -> (Decimal, Decimal){
-            let debt_ratio = borrow_ratio.checked_add(stable_ratio).unwrap().checked_add(bond_ratio).unwrap();
-            let apy = self.get_variable_interest_rate(debt_ratio, model);
+            let apy = self.get_variable_interest_rate(borrow_ratio, model);
             let validator_apy = Global::<ValidatorKeeper>::from(KEEPER_COMPONENT).get_active_set_apy();
-            
+            info!(
+                "borrow_ratio: {}, stable_ratio:{}, bond_ratio:{}, apy:{}, validator_apy:{}", 
+                borrow_ratio, _stable_ratio, _bond_ratio, apy, validator_apy
+            );
             // Runtime::emit_event(DebugGetInterestRateEvent{
             //     variable_rate: apy,
             //     stable_ratio: _stable_ratio,

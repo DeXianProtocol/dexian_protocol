@@ -1,11 +1,7 @@
-pub mod staking_structs;
-
-
 use scrypto::prelude::*;
 // use common::{List, Vaults};
 use common::utils::*;
 use keeper::UnstakeData;
-pub use self::staking_structs::*;
 
 
 #[blueprint]
@@ -204,3 +200,12 @@ mod staking_pool {
 }
 
 
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct JoinEvent {
+    pub amount: Decimal,
+    pub validator: ComponentAddress,
+    pub lsu_index: Decimal,
+    pub lsu_amount: Decimal,
+    pub dse_index: Decimal,
+    pub dse_amount: Decimal,
+}
