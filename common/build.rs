@@ -77,8 +77,6 @@ fn main() {
     write_package("ORACLE_PACKAGE", "ORACLE_PACKAGE", &decoder, &mut f);
     write_package("KEEPER_PACKAGE", "KEEPER_PACKAGE", &decoder, &mut f);
     write_package("INTEREST_PACKAGE", "INTEREST_PACKAGE", &decoder, &mut f);
-    write_package("POOL_PACKAGE", "MARGIN_POOL_PACKAGE", &decoder, &mut f);
-    write_package("REFERRAL_GENERATOR_PACKAGE", "REFERRAL_GENERATOR_PACKAGE", &decoder, &mut f);
     // write_package("FEE_DISTRIBUTOR_PACKAGE", "FEE_DISTRIBUTOR_PACKAGE", &decoder, &mut f);
     // write_package("FEE_DELEGATOR_PACKAGE", "FEE_DELEGATOR_PACKAGE", &decoder, &mut f);
     // write_package("PERMISSION_REGISTRY_PACKAGE", "PERMISSION_REGISTRY_PACKAGE", &decoder, &mut f);
@@ -87,7 +85,7 @@ fn main() {
     write_component("ORACLE_COMPONENT", "_ORACLE_COMPONENT", &decoder, &mut f);
     write_component("KEEPER_COMPONENT", "_KEEPER_COMPONENT", &decoder, &mut f);
     write_component("INTEREST_COMPONENT", "_INTEREST_COMPONENT", &decoder, &mut f);
-    write_component("REFERRAL_GENERATOR_COMPONENT", "_REFERRAL_GENERATOR_COMPONENT", &decoder, &mut f);
+    
     // write_component("FEE_DISTRIBUTOR_COMPONENT", "_FEE_DISTRIBUTOR_COMPONENT", &decoder, &mut f);
     // write_component("FEE_DELEGATOR_COMPONENT", "_FEE_DELEGATOR_COMPONENT", &decoder, &mut f);
     // write_component("PERMISSION_REGISTRY_COMPONENT", "_PERMISSION_REGISTRY_COMPONENT", &decoder, &mut f);
