@@ -1,5 +1,5 @@
 pub mod structs;
-
+use common::utils;
 use common::{_AUTHORITY_RESOURCE, _BASE_AUTHORITY_RESOURCE, _BASE_RESOURCE};
 use scrypto::prelude::*;
 use self::structs::*;
