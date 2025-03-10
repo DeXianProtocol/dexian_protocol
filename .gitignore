@@ -3,6 +3,7 @@
 debug/
 target/
 coverage/
+releases/
 
 
 # Remove Cargo.lock from gitignore if creating an executable, leave it for libraries

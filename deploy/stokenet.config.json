@@ -1,0 +1,13 @@
+{
+    "OWNER_RESOURCE": "resource_tdx_2_1t5aptlez52wf794s7fgm93e8zku65a8cmuj5hg6hecamtj8nxk4ypq",
+    "AUTHORITY_RESOURCE": "resource_tdx_2_1thupkuuej88a0gej0zdjyyq5qt4nm9sp77h8fduv33pd4rvlfpgt5w",
+    "BASE_AUTHORITY_RESOURCE": "resource_tdx_2_1tkd6lede6l549cuqx76ce8z89vz5w00gc6wkp8mh46uzgzfgutm568",
+    "BASE_RESOURCE": "resource_tdx_2_1t4lp2h5y50za2e6p4wku0qpcyzmheut0y8ef3h0wm7ey9n66xjct66",
+    "FAUCET_PACKAGE": "package_tdx_2_1p5d7zjr6sz5tthxstcgp42yw97m6er53qyww6llhsnrhlqv0j2z8nu",
+    "FAUCET_COMPONENT": "component_tdx_2_1cqu3hky37ptgxmfrfucvesjngzwxswnlk9mttx6c9ypkx5y0k8wqr7",
+    "FAUCET_OWNER_RESOURCE": "resource_tdx_2_1t46zx4sztew8h9fsafnknh7dhacag72d2lhmlhymcq6ufc5ee0phhw",
+    "USDC_RESOURCE": "resource_tdx_2_1t5u2hxjpr57wf9ehmg36tye2s2nngevwhpje0hj2xax4nan03dv7sm",
+    "USDT_RESOURCE": "resource_tdx_2_1thskp39pzlfkd0f9zeem38sk6hjuy2x8ljn8pdn3ck0h7x73q4wyc6",
+    "KEEPER_PACKAGE": "package_tdx_2_1pksmgfxvsa9stsdtc8ndq6r7g750xrhju0a8dkxu7fqfu0ltm2wax9",
+    "KEEPER_COMPONENT": "component_tdx_2_1cpve4h735n39q5jyru7rekuxmkaxqza0q704q0ylxgzlww655guq7g"
+}

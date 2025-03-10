@@ -1,7 +1,7 @@
 pub mod structs;
 
 use scrypto::prelude::*;
-use common::{_AUTHORITY_RESOURCE, RESERVE_WEEKS, A_WEEK_EPOCHS, EPOCH_OF_YEAR, BABYLON_START_EPOCH};
+use common::{_AUTHORITY_RESOURCE, _BASE_RESOURCE, _BASE_AUTHORITY_RESOURCE, RESERVE_WEEKS, A_WEEK_EPOCHS, EPOCH_OF_YEAR, BABYLON_START_EPOCH};
 pub use self::structs::*;
 
 #[blueprint]
@@ -9,10 +9,12 @@ pub use self::structs::*;
 //#[events(DebugGetApy, DebugGetApy2)]
 mod validator_keeper{
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
+    const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
+    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
 
-    enable_function_auth! {
-        instantiate => rule!(require(AUTHORITY_RESOURCE));
-    }
+    // enable_function_auth! {
+    //     instantiate => rule!(require(AUTHORITY_RESOURCE));
+    // }
 
     enable_method_auth!{
         roles{
@@ -38,39 +40,15 @@ mod validator_keeper{
 
     impl ValidatorKeeper {
         pub fn instantiate(
-            // owner_rule: AccessRule,
-            // admin_rule: AccessRule,
-            // op_rule: AccessRule
-        ) -> (Global<ValidatorKeeper>, Bucket, Bucket){
-            let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
-                .divisibility(DIVISIBILITY_NONE)
-                .metadata(metadata!(
-                    init {
-                        "name" => "ValidatorKeeper Admin Badge".to_owned(), locked;
-                        "description" => 
-                        "This is a DeXian Protocol admin badge used to authenticate the admin.".to_owned(), locked;
-                    }
-                ))
-                .mint_initial_supply(1);
-            let op_badge = ResourceBuilder::new_fungible(OwnerRole::None)
-                .divisibility(DIVISIBILITY_NONE)
-                .metadata(metadata!(
-                    init {
-                        "name" => "ValidatorKeeper Operator Badge".to_owned(), locked;
-                        "description" => 
-                        "This is a DeXian Protocol operator badge used to authenticate the operator.".to_owned(), locked;
-                    }
-                ))
-                .mint_initial_supply(1);
-            let admin_rule = rule!(require(admin_badge.resource_address()));
-            let op_rule = rule!(require(op_badge.resource_address()));
-            let owner_rule = rule!(require(admin_badge.resource_address()));
+            owner_role: OwnerRole
+        ) -> Global<ValidatorKeeper>{
+            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_RESOURCE));
             
             let component = Self{
                 validator_map: HashMap::new()
             }.instantiate()
-            // .prepare_to_globalize(OwnerRole::Fixed(rule!(require(admin_badge.resource_address()))))
-            .prepare_to_globalize(OwnerRole::Fixed(owner_rule))
+            .prepare_to_globalize(owner_role)
             .roles(
                 roles!(
                     admin => admin_rule;
@@ -79,7 +57,7 @@ mod validator_keeper{
                 )
             ).globalize();
             
-            (component, admin_badge.into(), op_badge.into())
+            component
         }
 
         pub fn fill_validator_staking(&mut self, validator_addr: ComponentAddress, stake_data_vec: Vec<StakeData>){
