@@ -1,21 +1,26 @@
 pub mod structs;
 
+use common::{_AUTHORITY_RESOURCE, _BASE_AUTHORITY_RESOURCE, _BASE_RESOURCE};
 use scrypto::prelude::*;
-use common::{utils};
 use self::structs::*;
 
 #[blueprint]
 #[events(SetPriceEvent, SetPublicKeyEvent, SetValidityPeriodEvent)]
 mod oracle_price{
 
+    const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
+    const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
+    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
+
     enable_method_auth!{
         roles{
-            operator => updatable_by: [];
-            admin => updatable_by: [];
+            authority => updatable_by:[];
+            operator => updatable_by: [authority];
+            admin => updatable_by: [authority];
         },
         methods {
             //admin
-            set_verify_public_key => restrict_to: [admin, OWNER];
+            set_verify_public_key => restrict_to: [admin];
     
             //op
             set_price_quote_in_xrd => restrict_to: [operator, admin];
@@ -40,11 +45,11 @@ mod oracle_price{
         
         pub fn instantiate(
             owner_role: OwnerRole,
-            op_rule: AccessRule,
-            admin_rule: AccessRule,
             price_signer_pk: String,
             max_diff: u64
         ) -> Global<PriceOracle> {
+            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_RESOURCE));
             Self{
                 price_map: HashMap::new(),
                 pk_str: price_signer_pk.to_owned(),
@@ -57,6 +62,7 @@ mod oracle_price{
                 roles!(
                     admin => admin_rule;
                     operator => op_rule;
+                    authority => rule!(require(AUTHORITY_RESOURCE));
                 )
             )
             .globalize()

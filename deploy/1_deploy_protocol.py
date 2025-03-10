@@ -69,8 +69,7 @@ async def main():
     chdir(path)
 
     async with ClientSession(connector=TCPConnector(ssl=False)) as session:
-        oracle_key_0 = '891fa1c6410621dfb3a693fcbb5663025d564f2a6584d8446b608fc74a4083ab7ee0e767e3a8e987b95bc18df6090536'
-        oracle_key_1 = 'afa0c61c68fd0f7dd8f389daf6f77b6b246155fe0ba02a0c9545798ba2572a184a9f705d77c51937e513b10e9a743a9f'
+        oracle_key_0 = 'a5bc3d9296bda1e52f96bf0a65238998877dbddb0703bd37ef1f18a6ffce458a'
 
         clean('common')
         clean("faucet")
@@ -318,10 +317,10 @@ async def main():
                     ret.ManifestBuilderAddress.STATIC(ret.Address(interest_package)),
                     'DefInterestModel',
                     'instantiate',
-                    [ret.Decimal("0.2"),
-                    ret.Decimal("0.5"),
-                    ret.Decimal("0.55"),
-                    ret.Decimal("0.45")]
+                    [ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.2")),
+                    ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.5")),
+                    ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.55")),
+                    ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.45"))]
                 )
                 payload, intent = await gateway.build_transaction(builder, public_key, private_key)
                 await gateway.submit_transaction(payload)
@@ -351,22 +350,17 @@ async def main():
             print('ORACLE_PACKAGE:', oracle_package)
 
             if 'ORACLE_COMPONENT' not in config_data:
-                oracle_key_bytes_0 = ret.ManifestBuilderValue.ARRAY_VALUE(ret.ManifestBuilderValueKind.U8_VALUE, 
-                    [ret.ManifestBuilderValue.U8_VALUE(b) for b in bytes.fromhex(oracle_key_0)])
-                oracle_key_bytes_1 = ret.ManifestBuilderValue.ARRAY_VALUE(ret.ManifestBuilderValueKind.U8_VALUE, 
-                    [ret.ManifestBuilderValue.U8_VALUE(b) for b in bytes.fromhex(oracle_key_1)])
+                oracle_key_bytes_0 = ret.ManifestBuilderValue.STRING_VALUE(ret.ManifestBuilderValueKind.STRING_VALUE(oracle_key_0))
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
                 builder = builder.call_function(
                     ret.ManifestBuilderAddress.STATIC(ret.Address(oracle_package)),
-                    'Oracle',
-                    'new',
+                    'PriceOracle',
+                    'instantiate',
                     [
                         manifest_owner_role, 
-                        ret.ManifestBuilderValue.MAP_VALUE(ret.ManifestBuilderValueKind.U64_VALUE, ret.ManifestBuilderValueKind.ARRAY_VALUE, [
-                            ret.ManifestV1BuilderMapEntry(ret.ManifestBuilderValue.U64_VALUE(0), oracle_key_bytes_0),
-                            ret.ManifestV1BuilderMapEntry(ret.ManifestBuilderValue.U64_VALUE(1), oracle_key_bytes_1)
-                        ])
+                        oracle_key_bytes_0,
+                        ret.ManifestBuilderValue.U64_VALUE(ret.ManifestBuilderValueKind.U64_VALUE(3000))
                     ]
                 )
                 payload, intent = await gateway.build_transaction(builder, public_key, private_key)
