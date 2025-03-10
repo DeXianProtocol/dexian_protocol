@@ -10,17 +10,21 @@ use crate::cdp::cdp_mgr::CollateralDebtManager;
 #[events(FasterRedeemEvent, NormalRedeemEvent, NftFasterRedeemEvent, ClaimXrdEvent, SettleEvent, DebugEvent)]
 mod staking_earning {
 
+    const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
+    const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
+    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
+
     enable_method_auth! {
         roles{
-            admin => updatable_by: [];
-            operator => updatable_by: [admin];
+            authority => updatable_by: [];
+            admin => updatable_by: [authority];
+            operator => updatable_by: [authority];
         },
         methods {
-            set_unstake_epoch_num => restrict_to: [operator, OWNER];
-            join => restrict_to: [operator, OWNER];
-            claim_xrd => restrict_to: [operator, OWNER];
-            redeem => restrict_to: [operator, OWNER];
-            
+            set_unstake_epoch_num => restrict_to: [operator];
+            join => PUBLIC;
+            claim_xrd => PUBLIC;
+            redeem => PUBLIC;
             get_dse_token => PUBLIC;
         }
     }
@@ -28,17 +32,17 @@ mod staking_earning {
     struct StakingEarning{
         staking_pool: Global<StakingResourePool>,
         dse_token: ResourceAddress,
-        // dx_token: ResourceAddress,
         unstake_epoch_num: u64
     }
 
     impl StakingEarning{
 
         pub fn instantiate(
-            unstake_epoch_num: u64,
-            admin_rule: AccessRule,
-            op_rule: AccessRule
+            owner_role: OwnerRole,
+            unstake_epoch_num: u64
         ) -> Global<StakingEarning>{
+            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_RESOURCE));
             let (address_reservation, component_address) = Runtime::allocate_component_address(
                 StakingEarning::blueprint_id()
             );
@@ -50,9 +54,10 @@ mod staking_earning {
                 dse_token,
                 unstake_epoch_num
             }.instantiate()
-            .prepare_to_globalize(OwnerRole::Fixed(admin_rule.clone()))
+            .prepare_to_globalize(owner_role)
             .with_address(address_reservation)
             .roles(roles! {
+                authority => rule!(require(AUTHORITY_RESOURCE));
                 admin => admin_rule.clone();
                 operator => op_rule.clone();
             })

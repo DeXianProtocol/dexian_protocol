@@ -11,5 +11,7 @@
     "KEEPER_PACKAGE": "package_tdx_2_1pksmgfxvsa9stsdtc8ndq6r7g750xrhju0a8dkxu7fqfu0ltm2wax9",
     "KEEPER_COMPONENT": "component_tdx_2_1cpve4h735n39q5jyru7rekuxmkaxqza0q704q0ylxgzlww655guq7g",
     "INTEREST_PACKAGE": "package_tdx_2_1pkhfcej8q7exatahv25yyfjr3dzhjh49lygsq5ly4u2jxlxx0xfp84",
-    "INTEREST_COMPONENT": "component_tdx_2_1cq2s48g8ws53hvdm72j2vwvxs0a8ewa82pa6qwnvsxluxmm8046qkh"
+    "INTEREST_COMPONENT": "component_tdx_2_1cq2s48g8ws53hvdm72j2vwvxs0a8ewa82pa6qwnvsxluxmm8046qkh",
+    "ORACLE_PACKAGE": "package_tdx_2_1p5veej2wyqh4hvex67wlvlt8swktfkm9xaecv4ep4mtwx7pty6xszg",
+    "ORACLE_COMPONENT": "component_tdx_2_1cq9v06mxwyye3rldve88d9x2wvfaaq90y2vnxl3u4jplvwpw846pl2"
 }

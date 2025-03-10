@@ -1,6 +1,5 @@
 use scrypto::prelude::*;
 use common::*;
-use oracle::oracle_price::oracle_price::PriceOracle;
 use common::utils::assert_resource;
 use interest::InterestModel;
 use crate::pool::lending::lend_pool::LendResourcePool;
@@ -43,7 +42,6 @@ pub struct CollateralDebtPosition{
 
 #[derive(ScryptoSbor)]
 struct AssetState{
-    // pub def_interest_model: ComponentAddress,
     pub interest_model: InterestModel,
     pub collateral_token: ResourceAddress,
     pub ltv: Decimal,
@@ -59,25 +57,40 @@ struct AssetState{
     FungibleVault
 )]
 mod cdp_mgr{
+
+    // const INTEREST_COMPONENT: ComponentAddress = _INTEREST_COMPONENT;
+    const ORACLE_COMPONENT: ComponentAddress = _ORACLE_COMPONENT;
+    const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
+    const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
+    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
+
+    extern_blueprint! {
+        ORACLE_PACKAGE,
+        PriceOracle {
+            fn get_valid_price_in_xrd(&mut self, quote_addr: ResourceAddress, xrd_price_in_quote: String, timestamp: u64, signature: String) -> Decimal;
+            fn get_price_quote_in_xrd(&self, res_addr: ResourceAddress) -> Decimal;
+        }
+    }
     
     enable_method_auth!{
         roles{
-            admin => updatable_by: [];
-            operator => updatable_by: [];
-            protocol_caller => updatable_by:[];
+            authority => updatable_by:[]; 
+            admin => updatable_by: [authority];
+            operator => updatable_by: [authority];
+            protocol_caller => updatable_by:[authority];
         },
         methods{
-            new_pool => restrict_to:[operator, OWNER];
+            new_pool => restrict_to:[operator];
             withdraw_insurance => restrict_to: [operator, OWNER];
             set_close_factor =>restrict_to: [operator, OWNER];
 
-            borrow_variable => restrict_to: [protocol_caller, OWNER];
-            borrow_stable => restrict_to: [protocol_caller, OWNER];
-            extend_borrow => restrict_to: [protocol_caller, OWNER];
-            withdraw_collateral => restrict_to:[protocol_caller, OWNER];
-            liquidation => restrict_to:[protocol_caller, OWNER];
-
             staking_borrow => restrict_to: [protocol_caller, OWNER];
+
+            borrow_variable => PUBLIC;
+            borrow_stable => PUBLIC; //restrict_to: [protocol_caller, OWNER];
+            extend_borrow => PUBLIC; //restrict_to: [protocol_caller, OWNER];
+            withdraw_collateral => PUBLIC; //restrict_to:[protocol_caller, OWNER];
+            liquidation => PUBLIC; //restrict_to:[protocol_caller, OWNER];
 
             borrow_flashloan => PUBLIC;
             repay_flashloan => PUBLIC;
@@ -85,24 +98,23 @@ mod cdp_mgr{
             withdraw => PUBLIC;
             repay => PUBLIC;
             addition_collateral => PUBLIC;
-            get_cdp_resource_address => PUBLIC;
+
             get_interest_rate => PUBLIC;
         }
     }
 
     struct CollateralDebtManager{
-        price_oracle: Global<PriceOracle>,
         // Lend Pool of each asset in the lending pool. I.E.: XRD ==> LendResourcePool(XRD)
         pools: HashMap<ResourceAddress, Global<LendResourcePool>>,
         //Status of each asset in the lending pool, I.E.: XRD ==> AssetState(XRD)
         states: HashMap<ResourceAddress, AssetState>,
         // vault for each collateral asset(supply token), I.E. dxXRD ==> Vault(dxXRD)
         collateral_vaults: Vaults,
+        self_cmp_addr: ComponentAddress,
         // CDP token define
         cdp_res_mgr: NonFungibleResourceManager,
         // CDP id counter
         cdp_id_counter: u64,
-        self_cmp_addr: ComponentAddress,
         // close factor for liquidation
         close_factor_percent: Decimal,
         /// flashloan NFT resource manager
@@ -115,12 +127,14 @@ mod cdp_mgr{
 
         /// Collateral Debt Position Manager
         pub fn instantiate(
-            admin_rule: AccessRule, 
-            pool_mgr_rule: AccessRule,
-            caller_rule: AccessRule,
-            price_oracle: Global<PriceOracle>
-        )->(Global<CollateralDebtManager>, ResourceAddress){
+            owner_role: OwnerRole,
+            caller_rule: AccessRule
+        )->Global<CollateralDebtManager> {
+            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_RESOURCE));
             let (address_reservation, address) = Runtime::allocate_component_address(CollateralDebtManager::blueprint_id());
+
+            Global::<PriceOracle>::try_from(ORACLE_COMPONENT).expect("oracle component not found");
             let cdp_res_mgr = ResourceBuilder::new_integer_non_fungible::<CollateralDebtPosition>(OwnerRole::None)
                 .metadata(metadata!(init{
                     "symbol" => "CDP", locked;
@@ -143,8 +157,7 @@ mod cdp_mgr{
                 .create_with_no_initial_supply();
 
             let transient_nft_res_mgr = ResourceBuilder::new_integer_non_fungible::<FlashLoanData>(
-                OwnerRole::Fixed(admin_rule.clone())
-            ).metadata(metadata!{
+                owner_role.clone()).metadata(metadata!{
                 init{
                     "name"=> "dxLoanNFT", locked;
                     "description" => "DeXian FlashLoan NFT", locked;
@@ -170,21 +183,20 @@ mod cdp_mgr{
                 close_factor_percent: Decimal::from(50),
                 cdp_id_counter: 0u64,
                 transient_id_counter: 0u64,
-                price_oracle,
                 cdp_res_mgr,
                 transient_nft_res_mgr
             }.instantiate()
-            .prepare_to_globalize(OwnerRole::Fixed(admin_rule.clone()))
+            .prepare_to_globalize(owner_role)
             .with_address(address_reservation)
             .roles(roles!{
+                authority => rule!(require(AUTHORITY_RESOURCE));
                 admin => admin_rule.clone();
-                operator => pool_mgr_rule.clone();
+                operator => op_rule.clone();
                 protocol_caller => caller_rule.clone();
             }
             )
             .globalize();
-        // cdp_vaults.
-            (component, cdp_res_mgr.address())
+            component
         }
 
         pub fn new_pool(&mut self, 
@@ -240,12 +252,6 @@ mod cdp_mgr{
             borrow_bucket
         }
 
-        pub fn get_interest_rate(&self, underlying_token_addr: ResourceAddress, stable_borrow_amount:Decimal) -> (Decimal, Decimal, Decimal){
-            assert!(self.pools.get(&underlying_token_addr).is_some(), "There is no pool of funds corresponding to the assets!");
-            let lending_pool = self.pools.get(&underlying_token_addr).unwrap();
-            lending_pool.get_interest_rate(stable_borrow_amount)
-        }
-
         pub fn set_close_factor(&mut self, new_close_factor: Decimal){
             self.close_factor_percent = new_close_factor;
         }
@@ -268,11 +274,21 @@ mod cdp_mgr{
             dx_bucket: FungibleBucket,
             borrow_token: ResourceAddress,
             borrow_amount: Decimal,
-            borrow_price_in_xrd: Decimal,
-            collateral_underlying_price_in_xrd: Decimal
+            price1: String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
         ) -> (FungibleBucket, NonFungibleBucket){
             let dx_token = dx_bucket.resource_address();
             let dx_amount = dx_bucket.amount();
+            let (borrow_price_in_xrd, collateral_underlying_price_in_xrd) = self.extra_params(dx_token, borrow_token, &price1, quote1, timestamp1, &signature1, price2, quote2, timestamp2, signature2);
+            info!("borrow_price_in_xrd:{}, collateral_underlying_price_in_xrd:{}",borrow_price_in_xrd, collateral_underlying_price_in_xrd);
+            assert!(borrow_price_in_xrd.is_positive() && collateral_underlying_price_in_xrd.is_positive(), "Incorrect information on price signature.");
+            info!("collateral {}, amount:{}; price:{}/{}", Runtime::bech32_encode_address(dx_token), dx_amount, borrow_price_in_xrd, collateral_underlying_price_in_xrd);
             let max_loan_amount = self.get_max_loan_amount(dx_token, dx_amount, borrow_token, borrow_price_in_xrd, collateral_underlying_price_in_xrd, Decimal::ZERO);
             assert!(borrow_amount <= max_loan_amount, "The amount borrowed exceeds the borrowable quantity of the collateral.");
 
@@ -292,11 +308,19 @@ mod cdp_mgr{
             dx_bucket: FungibleBucket,
             borrow_token: ResourceAddress,
             borrow_amount: Decimal,
-            borrow_price_in_xrd: Decimal,
-            collateral_underlying_price_in_xrd: Decimal
+            price1: String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
         ) -> (FungibleBucket, NonFungibleBucket){
             let dx_token = dx_bucket.resource_address();
             let dx_amount = dx_bucket.amount();
+            let (borrow_price_in_xrd, collateral_underlying_price_in_xrd) = self.extra_params(dx_token, borrow_token, &price1, quote1, timestamp1, &signature1, price2, quote2, timestamp2, signature2);
+            assert!(borrow_price_in_xrd.is_positive() && collateral_underlying_price_in_xrd.is_positive(), "Incorrect information on price signature.");
             let max_loan_amount = self.get_max_loan_amount(dx_token, dx_amount, borrow_token, borrow_price_in_xrd, collateral_underlying_price_in_xrd, Decimal::ZERO);
             assert!(borrow_amount <= max_loan_amount, "The amount borrowed exceeds the borrowable quantity of the collateral.");
             
@@ -318,15 +342,25 @@ mod cdp_mgr{
         pub fn extend_borrow(&mut self,
             cdp: NonFungibleBucket,
             amount: Decimal,
-            borrow_price_in_xrd: Decimal,
-            collateral_underlying_price_in_xrd: Decimal
+            price1: String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
         ) -> (FungibleBucket, NonFungibleBucket){
             assert_resource(&cdp.resource_address(), &self.cdp_res_mgr.address());
             assert!(cdp.amount() == Decimal::ONE, "Only one CDP can be processed at a time!");
-            
             let cdp_id = cdp.non_fungible_local_id();
             let cdp_data = self.cdp_res_mgr.get_non_fungible_data::<CollateralDebtPosition>(&cdp_id);
-            let borrow_token = cdp_data.borrow_token;
+            let borrow_token =  cdp_data.borrow_token;
+            let collateral_underlying_token = get_underlying_token_res_addr(cdp_data.collateral_token);
+            let (borrow_price_in_xrd, collateral_underlying_price_in_xrd) = self.get_price_in_xrd(collateral_underlying_token, borrow_token, &price1, quote1, timestamp1, &signature1, price2, quote2, timestamp2, signature2);
+            assert!(borrow_price_in_xrd.is_positive() && collateral_underlying_price_in_xrd.is_positive(), "Incorrect information on price signature.");
+            info!("collateral {}|{}, {}|{} price:{}/{}", Runtime::bech32_encode_address(collateral_underlying_token), collateral_underlying_token.to_hex(), Runtime::bech32_encode_address(collateral_underlying_token),collateral_underlying_token.to_hex() , borrow_price_in_xrd, collateral_underlying_price_in_xrd);
+            
             let dx_token = cdp_data.collateral_token;
             let dx_amount = cdp_data.collateral_amount;
             let max_loan_amount = self.get_max_loan_amount(dx_token, dx_amount, borrow_token, borrow_price_in_xrd, collateral_underlying_price_in_xrd, Decimal::ZERO);
@@ -367,18 +401,28 @@ mod cdp_mgr{
         pub fn withdraw_collateral(&mut self,
             cdp: NonFungibleBucket,
             amount: Decimal,
-            borrow_price_in_xrd: Decimal,
-            collateral_underlying_price_in_xrd: Decimal
+            price1: String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
         ) -> (FungibleBucket, NonFungibleBucket){
-            assert_resource(&cdp.resource_address(), &self.cdp_res_mgr.address());
-            assert!(cdp.amount() == Decimal::ONE, "Only one CDP can be processed at a time!");
-            
             let cdp_id = cdp.non_fungible_local_id();
             let cdp_data = self.cdp_res_mgr.get_non_fungible_data::<CollateralDebtPosition>(&cdp_id);
             let borrow_token = cdp_data.borrow_token;
             let dx_token = cdp_data.collateral_token;
+            let cdp_id: NonFungibleLocalId = cdp.non_fungible_local_id();
+            let collateral_underlying_token = get_underlying_token_res_addr(cdp_data.collateral_token);
+            let (borrow_price_in_xrd, collateral_underlying_price_in_xrd) = self.get_price_in_xrd(collateral_underlying_token, borrow_token, &price1, quote1, timestamp1, &signature1, price2, quote2, timestamp2, signature2);
+            assert!(borrow_price_in_xrd.is_positive() && collateral_underlying_price_in_xrd.is_positive(), "Incorrect information on price signature.");
+            assert_resource(&cdp.resource_address(), &self.cdp_res_mgr.address());
+            assert!(cdp.amount() == Decimal::ONE, "Only one CDP can be processed at a time!");
+            
+            
             let dx_amount = cdp_data.collateral_amount;
-
             self.validate_withdraw_collateral(dx_token, dx_amount, borrow_token, borrow_price_in_xrd, collateral_underlying_price_in_xrd, cdp_data.normalized_borrow, amount);
 
             let divisibility = get_divisibility(dx_token.clone()).unwrap();
@@ -472,15 +516,26 @@ mod cdp_mgr{
         pub fn liquidation(&mut self,
             debt_bucket: FungibleBucket,
             debt_to_cover: Decimal,
-            cdp_id: NonFungibleLocalId,
-            borrow_price_in_xrd: Decimal, 
-            underlying_token: ResourceAddress,
-            collateral_underlying_price_in_xrd: Decimal
+            id: u64,
+            price1: String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
         ) -> (FungibleBucket, FungibleBucket){
+            let cdp_id = NonFungibleLocalId::integer(id);
             let cdp_data = self.cdp_res_mgr.get_non_fungible_data::<CollateralDebtPosition>(&cdp_id);
             let borrow_token = cdp_data.borrow_token;
             let dx_token = cdp_data.collateral_token;
+            let underlying_token = get_underlying_token_res_addr(dx_token);
             let dx_amount = cdp_data.collateral_amount;
+            assert!(borrow_token == debt_bucket.resource_address(), "the borrow token does not matches CDP.");
+
+            let (borrow_price_in_xrd, collateral_underlying_price_in_xrd) = self.get_price_in_xrd(underlying_token, borrow_token, &price1, quote1, timestamp1, &signature1, price2, quote2, timestamp2, signature2);
+            assert!(borrow_price_in_xrd.is_positive() || collateral_underlying_price_in_xrd.is_positive(), "Incorrect information on price signature.");
 
             let (actual_debt_to_liquidate,release_collateral_to_liqiudate) = self.get_liquidate_debt_and_collateral(
                 borrow_price_in_xrd, collateral_underlying_price_in_xrd, debt_to_cover,
@@ -549,21 +604,16 @@ mod cdp_mgr{
             pool.repay_fixed_term(repay_bucket, flashloan_data.amount, flashloan_data.fee)
         }
 
-
-
         pub fn withdraw_insurance(&mut self, underlying_token_addr: ResourceAddress, amount: Decimal) -> FungibleBucket{
             assert!(self.pools.get(&underlying_token_addr).is_some(), "unknow token resource address.");
             let pool = self.pools.get_mut(&underlying_token_addr).unwrap();
             pool.withdraw_insurance(amount)
         }
 
-        pub fn get_cdp_resource_address(&self, cdp_id: NonFungibleLocalId)->(ResourceAddress, ResourceAddress){
-            let cdp_data = self.cdp_res_mgr.get_non_fungible_data::<CollateralDebtPosition>(&cdp_id);
-            let borrow_token = cdp_data.borrow_token;
-            let dx_token = cdp_data.collateral_token;
-
-            let underlying_token = get_underlying_token_res_addr(dx_token);
-            (borrow_token, underlying_token.clone())
+        pub fn get_interest_rate(&self, underlying_token_addr: ResourceAddress, stable_borrow_amount:Decimal) -> (Decimal, Decimal, Decimal){
+            assert!(self.pools.get(&underlying_token_addr).is_some(), "There is no pool of funds corresponding to the assets!");
+            let lending_pool = self.pools.get(&underlying_token_addr).unwrap();
+            lending_pool.get_interest_rate(stable_borrow_amount)
         }
 
         fn get_liquidate_debt_and_collateral(&self,
@@ -772,6 +822,54 @@ mod cdp_mgr{
 
             Decimal::ZERO
             
+        }
+
+        fn extra_params(&self,
+            dx_token: ResourceAddress,
+            borrow_token: ResourceAddress,
+            price1: &String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: &String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
+        ) -> (Decimal, Decimal){
+            let collateral_underlying_token = get_underlying_token_res_addr(dx_token);
+            self.get_price_in_xrd(collateral_underlying_token, borrow_token, &price1, quote1, timestamp1, &signature1, price2, quote2, timestamp2, signature2)
+        }
+
+        fn get_price_in_xrd(&self,
+            collateral_token: ResourceAddress,
+            borrow_token: ResourceAddress,
+            price1: &String,
+            quote1: ResourceAddress,
+            timestamp1: u64,
+            signature1: &String,
+            price2: Option<String>,
+            quote2: Option<ResourceAddress>,
+            timestamp2: Option<u64>,
+            signature2: Option<String>
+        ) -> (Decimal, Decimal){
+            let mut price_oracle = Global::<PriceOracle>::from(ORACLE_COMPONENT);
+            if borrow_token == XRD && collateral_token == quote1 {
+                let collateral_price_in_xrd = price_oracle.get_valid_price_in_xrd(quote1, price1.clone(), timestamp1, signature1.clone());
+                return (Decimal::ONE, collateral_price_in_xrd);
+            }
+            
+            if borrow_token == quote1 && quote2.is_some() && collateral_token == quote2.unwrap(){
+                let collateral_price_in_xrd = price_oracle.get_valid_price_in_xrd(quote2.unwrap(), price2.unwrap(), timestamp2.unwrap(), signature2.unwrap());
+                let borrow_price_in_xrd = price_oracle.get_valid_price_in_xrd(quote1, price1.clone(), timestamp1, signature1.clone());
+                return (borrow_price_in_xrd, collateral_price_in_xrd);
+            }
+            
+            if borrow_token == quote1 && collateral_token == XRD {
+                let borrow_price_in_xrd = price_oracle.get_valid_price_in_xrd(quote1, price1.clone(), timestamp1, signature1.clone());
+                return (borrow_price_in_xrd, Decimal::ONE);
+            }
+
+            (Decimal::ZERO, Decimal::ZERO)
         }
 
     }

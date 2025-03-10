@@ -75,8 +75,8 @@ async def main():
         clean("faucet")
         clean('keeper')
         clean('interest')
-        clean('oracle')
-        clean('protocol')
+        #clean('oracle')
+        #clean('protocol')
         
 
         gateway = Gateway(session)
@@ -350,7 +350,7 @@ async def main():
             print('ORACLE_PACKAGE:', oracle_package)
 
             if 'ORACLE_COMPONENT' not in config_data:
-                oracle_key_bytes_0 = ret.ManifestBuilderValue.STRING_VALUE(ret.ManifestBuilderValueKind.STRING_VALUE(oracle_key_0))
+                oracle_key_bytes_0 = ret.ManifestBuilderValue.STRING_VALUE(oracle_key_0)
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
                 builder = builder.call_function(
@@ -360,7 +360,7 @@ async def main():
                     [
                         manifest_owner_role, 
                         oracle_key_bytes_0,
-                        ret.ManifestBuilderValue.U64_VALUE(ret.ManifestBuilderValueKind.U64_VALUE(3000))
+                        ret.ManifestBuilderValue.U64_VALUE(3000)
                     ]
                 )
                 payload, intent = await gateway.build_transaction(builder, public_key, private_key)
