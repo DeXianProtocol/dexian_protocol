@@ -84,7 +84,7 @@ mod cdp_mgr{
             withdraw_insurance => restrict_to: [operator, OWNER];
             set_close_factor =>restrict_to: [operator, OWNER];
 
-            staking_borrow => restrict_to: [protocol_caller, OWNER];
+            staking_borrow => PUBLIC; //restrict_to: [protocol_caller, OWNER];
 
             borrow_variable => PUBLIC;
             borrow_stable => PUBLIC; //restrict_to: [protocol_caller, OWNER];

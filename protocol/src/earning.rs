@@ -20,26 +20,22 @@ mod staking_earning {
             admin => updatable_by: [authority];
             operator => updatable_by: [authority];
         },
-        methods {
-            set_unstake_epoch_num => restrict_to: [operator];
+        methods {            
             join => PUBLIC;
             claim_xrd => PUBLIC;
             redeem => PUBLIC;
-            get_dse_token => PUBLIC;
         }
     }
 
     struct StakingEarning{
         staking_pool: Global<StakingResourePool>,
-        dse_token: ResourceAddress,
-        unstake_epoch_num: u64
+        dse_token: ResourceAddress
     }
 
     impl StakingEarning{
 
         pub fn instantiate(
             owner_role: OwnerRole,
-            unstake_epoch_num: u64
         ) -> Global<StakingEarning>{
             let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
             let op_rule = rule!(require(BASE_RESOURCE));
@@ -51,8 +47,7 @@ mod staking_earning {
             
             let component = Self{
                 staking_pool,
-                dse_token,
-                unstake_epoch_num
+                dse_token
             }.instantiate()
             .prepare_to_globalize(owner_role)
             .with_address(address_reservation)
@@ -69,6 +64,7 @@ mod staking_earning {
         /// claim xrd with claimNFT
         /// 
         pub fn claim_xrd(&mut self, cdp_mgr: Global<CollateralDebtManager>, claim_nft: NonFungibleBucket) -> (FungibleBucket, Decimal){
+            assert!(claim_nft.amount() == Decimal::ONE, "claim_nft cannot be empty");
             let nft_addr = claim_nft.resource_address();
             let mut validator: Global<Validator> = get_validator(nft_addr);
             let validator_addr = validator.address();
@@ -154,14 +150,6 @@ mod staking_earning {
                 });
                 claim_nft_bucket.into()
             }
-        }
-
-        pub fn set_unstake_epoch_num(&mut self, unstake_epoch_num: u64){
-            self.unstake_epoch_num = unstake_epoch_num;
-        }
-
-        pub fn get_dse_token(&self) -> ResourceAddress{
-            self.dse_token
         }
 
     }

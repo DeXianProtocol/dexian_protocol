@@ -1,5 +1,4 @@
 use scrypto::prelude::*;
-// use common::{List, Vaults};
 use common::utils::*;
 use keeper::UnstakeData;
 
@@ -21,7 +20,6 @@ mod staking_pool {
             redeem => restrict_to:[operator, OWNER];
 
             get_redemption_value => PUBLIC;
-            get_vault_amount => PUBLIC;
             get_underlying_token => PUBLIC;
         }
     }
@@ -159,16 +157,12 @@ mod staking_pool {
             amount_of_pool_units.checked_mul(value_per_unit).unwrap()
         }
 
-        pub fn get_vault_amount(&self) -> Decimal{
-            self.sum_current_staked()
-        }
-
         pub fn get_underlying_token(&self) -> ResourceAddress{
             self.underlying_token
         }
 
         fn get_values(&self) -> (Decimal, Decimal, Decimal){
-            let total_value = self.get_vault_amount();
+            let total_value = self.sum_current_staked();
             let staking_unit_qty = self.staking_unit_res_mgr.total_supply().unwrap();
             (
                 total_value,
@@ -181,20 +175,12 @@ mod staking_pool {
             )
         }
 
-        fn sum_current_staked(& self) -> Decimal {
-            let mut sum = Decimal::ZERO;
-            for (validator_addr, vault) in &self.lsu_map{
-                let validator: Global<Validator> = Global::from(validator_addr.clone());
+        fn sum_current_staked(&self) -> Decimal {
+            self.lsu_map.iter().fold(Decimal::ZERO, |sum, (validator_addr, vault)| {
+                let validator: Global<Validator> = Global::from(*validator_addr);
                 let latest = validator.get_redemption_value(vault.amount());
-                sum = sum.checked_add(latest).unwrap();
-                // Runtime::emit_event(Event1{
-                //     sum,
-                //     validator: *validator_addr,
-                //     lsu_amount: vault.amount(),
-                //     staked: latest
-                // })
-            }
-            sum
+                sum.checked_add(latest).unwrap()
+            })
         }
     }
 }
