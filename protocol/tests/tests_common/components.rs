@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use radix_engine::blueprints::package;
-use scrypto::prelude::Package;
 use scrypto_test::prelude::*;
 use super::Resources;
 use ::common::*;
@@ -160,6 +158,7 @@ fn create_oracle(
         resources.owner_role.clone()
     );
 
+
     let oracle_component = ledger.call_function(
         oracle_package,
         "PriceOracle",
@@ -186,6 +185,7 @@ fn create_protocol(
         resources.owner_role.clone()
     );
 
+    
     let binding = ledger.call_function(
         protocol_package,
         "StakingEarning",
@@ -202,8 +202,8 @@ fn create_protocol(
         "CollateralDebtManager", 
         "instantiate",
         manifest_args!(
-            resources.owner_role.clone(),
-            rule!(require(global_caller(earning_component)))       
+            resources.owner_role.clone() //,
+            // rule!(require(global_caller(earning_component)))       
         )
     ).expect_commit_success().new_component_addresses()[0];
     

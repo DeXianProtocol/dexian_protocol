@@ -63,7 +63,7 @@ mod staking_earning {
         ///
         /// claim xrd with claimNFT
         /// 
-        pub fn claim_xrd(&mut self, cdp_mgr: Global<CollateralDebtManager>, claim_nft: NonFungibleBucket) -> (FungibleBucket, Decimal){
+        pub fn claim_xrd(&mut self, cdp_mgr: ComponentAddress, claim_nft: NonFungibleBucket) -> (FungibleBucket, Decimal){
             assert!(claim_nft.amount() == Decimal::ONE, "claim_nft cannot be empty");
             let nft_addr = claim_nft.resource_address();
             let mut validator: Global<Validator> = get_validator(nft_addr);
@@ -90,6 +90,7 @@ mod staking_earning {
                 (bucket, claim_amount)
             }
             else{
+                let cdp_mgr: Global<CollateralDebtManager> = Global::<CollateralDebtManager>::from(cdp_mgr);
                 let (_, stable_rate, _) = cdp_mgr.get_interest_rate(XRD, unstake_data.claim_amount);
                 let remain_epoch = claim_epoch - current_epoch;
                 let principal = calc_principal(unstake_data.claim_amount, stable_rate, Decimal::from(EPOCH_OF_YEAR), remain_epoch);
@@ -116,7 +117,7 @@ mod staking_earning {
             unit_bucket
         }
 
-        pub fn redeem(&mut self, cdp_mgr: Global<CollateralDebtManager>, validator_addr: ComponentAddress,  bucket: FungibleBucket, faster: bool) -> Bucket{
+        pub fn redeem(&mut self, cdp_mgr: ComponentAddress, validator_addr: ComponentAddress,  bucket: FungibleBucket, faster: bool) -> Bucket{
             let res_addr = bucket.resource_address();
             let amount = bucket.amount();
             let (claim_nft_bucket, claim_nft_id, claim_amount) = if res_addr == self.dse_token {

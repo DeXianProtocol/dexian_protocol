@@ -23,8 +23,8 @@ mod oracle_price{
             set_verify_public_key => restrict_to: [admin];
     
             //op
-            set_price_quote_in_xrd => restrict_to: [operator, admin];
-            set_validity_period => restrict_to: [operator, admin]; 
+            set_price_quote_in_xrd => restrict_to: [operator];
+            set_validity_period => restrict_to: [operator]; 
     
             //public
             get_price_quote_in_xrd => PUBLIC;

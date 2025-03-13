@@ -8,7 +8,7 @@ def deposit_all(builder: ManifestV1Builder, account: Address) -> ManifestV1Build
 
 def withdraw_to_bucket(builder: ManifestV1Builder, account: Address, resource: Address, amount: Decimal, name: str) -> ManifestV1Builder:
     builder = builder.account_withdraw(account, resource, amount)
-    builder = builder.take_from_worktop(resource, amount, ManifestV1BuilderBucket(name))
+    builder = builder.take_from_worktop(resource, amount, ManifestBuilderBucket(name))
     return builder
 
 def mint_owner_badge(builder: ManifestV1Builder) -> ManifestV1Builder:

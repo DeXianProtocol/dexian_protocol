@@ -30,6 +30,7 @@ mod def_interest_model{
     impl DefInterestModel {
 
         pub fn instantiate(
+            owner_role: OwnerRole,
             def_primary: Decimal, 
             def_quadratic: Decimal, 
             stable_coin_primary: Decimal, 
@@ -43,7 +44,7 @@ mod def_interest_model{
                 def_quadratic,
                 stable_coin_primary,
                 stable_coin_quadratic
-            }.instantiate().prepare_to_globalize(OwnerRole::None).globalize()
+            }.instantiate().prepare_to_globalize(owner_role).globalize()
         }
 
         pub fn get_interest_rate(&self, 

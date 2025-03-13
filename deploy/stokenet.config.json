@@ -13,5 +13,9 @@
     "INTEREST_PACKAGE": "package_tdx_2_1pkhfcej8q7exatahv25yyfjr3dzhjh49lygsq5ly4u2jxlxx0xfp84",
     "INTEREST_COMPONENT": "component_tdx_2_1cq2s48g8ws53hvdm72j2vwvxs0a8ewa82pa6qwnvsxluxmm8046qkh",
     "ORACLE_PACKAGE": "package_tdx_2_1p5veej2wyqh4hvex67wlvlt8swktfkm9xaecv4ep4mtwx7pty6xszg",
-    "ORACLE_COMPONENT": "component_tdx_2_1cq9v06mxwyye3rldve88d9x2wvfaaq90y2vnxl3u4jplvwpw846pl2"
+    "ORACLE_COMPONENT": "component_tdx_2_1cq9v06mxwyye3rldve88d9x2wvfaaq90y2vnxl3u4jplvwpw846pl2",
+    "PROTOCOL_PACKAGE": "package_tdx_2_1p4cae8j7uh8zqxn3m7mpemf55n6gvxe9yglarftjqf65l9zymkz4cz",
+    "STAKING_POOL": "component_tdx_2_1czj470wt96tfl28vfm0f4af7wl2n6kyaqw2rh7y2fj9xnq8ld4r4k7",
+    "EARNING_COMPONENT": "component_tdx_2_1cr676urwjr9lqr9qgeglmydvzntx8vx66nsflp20qvqh4nxk0sd44f",
+    "CDP_COMPONENT": "component_tdx_2_1czz2rq5jfmykpr84jv52rzttnurrn630msc88ryu6s9t93g4wsy5vu"
 }

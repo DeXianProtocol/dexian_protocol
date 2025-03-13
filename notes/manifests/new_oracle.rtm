@@ -1,0 +1,24 @@
+CALL_METHOD
+    Address("${account}")
+    "lock_fee"
+    Decimal("200")
+;
+
+CALL_FUNCTION
+    Address("${pkg}")
+    "PriceOracle"
+    "instantiate"
+    Enum<2u8>(
+        Enum<2u8>(
+            Enum<0u8>(
+                Enum<1u8>(
+                Decimal("${owner_amount}"),
+                Address("${owner}")
+                )
+            )
+            
+        )
+    )
+    "${pub_key_str}"
+    3000u64
+;

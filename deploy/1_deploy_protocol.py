@@ -75,8 +75,8 @@ async def main():
         clean("faucet")
         clean('keeper')
         clean('interest')
-        #clean('oracle')
-        #clean('protocol')
+        clean('oracle')
+        clean('protocol')
         
 
         gateway = Gateway(session)
@@ -372,56 +372,86 @@ async def main():
             envs.append(('ORACLE_COMPONENT', oracle_component))
             print('ORACLE_COMPONENT:', oracle_component)
 
-        #     if 'EXCHANGE_PACKAGE' not in config_data:
-        #         code, definition = build('exchange', envs, network_config['network_name'])
-        #         payload, intent = await gateway.build_publish_transaction(
-        #             account,
-        #             code,
-        #             definition,
-        #             owner_role,
-        #             public_key,
-        #             private_key,
-        #         )
-        #         await gateway.submit_transaction(payload)
-        #         addresses = await gateway.get_new_addresses(intent)
-        #         config_data['EXCHANGE_PACKAGE'] = addresses[0]
+            if 'PROTOCOL_PACKAGE' not in config_data:
+                code, definition = build('protocol', envs, network_config['network_name'])
+                payload, intent = await gateway.build_publish_transaction(
+                    account,
+                    code,
+                    definition,
+                    owner_role,
+                    public_key,
+                    private_key,
+                )
+                await gateway.submit_transaction(payload)
+                addresses = await gateway.get_new_addresses(intent)
+                config_data['PROTOCOL_PACKAGE'] = addresses[0]
 
-        #     exchange_package = config_data['EXCHANGE_PACKAGE']
-        #     envs.append(('EXCHANGE_PACKAGE', exchange_package))
-        #     print('EXCHANGE_PACKAGE:', exchange_package)
+            exchange_package = config_data['PROTOCOL_PACKAGE']
+            envs.append(('PROTOCOL_PACKAGE', exchange_package))
+            print('PROTOCOL_PACKAGE:', exchange_package)
 
-        #     if 'EXCHANGE_COMPONENT' not in config_data:
-        #         builder = ret.ManifestV1Builder()
-        #         builder = lock_fee(builder, account, 100)
-        #         builder = builder.account_withdraw(
-        #             account,
-        #             ret.Address(authority_resource),
-        #             ret.Decimal('1')
-        #         )            
-        #         builder = builder.take_from_worktop(
-        #             ret.Address(authority_resource),
-        #             ret.Decimal('1'),
-        #             ret.ManifestV1BuilderBucket("authority")
-        #         )
-        #         builder = builder.call_function(
-        #             ret.ManifestBuilderAddress.STATIC(ret.Address(exchange_package)),
-        #             'Exchange',
-        #             'new',
-        #             [
-        #                 manifest_owner_role, 
-        #                 ret.ManifestBuilderValue.BUCKET_VALUE(ret.ManifestV1BuilderBucket("authority")),
-        #                 ret.ManifestBuilderValue.ENUM_VALUE(0, []),
-        #             ]
-        #         )
-        #         payload, intent = await gateway.build_transaction(builder, public_key, private_key)
-        #         await gateway.submit_transaction(payload)
-        #         addresses = await gateway.get_new_addresses(intent)
-        #         config_data['EXCHANGE_COMPONENT'] = addresses[0]
+            if 'EARNING_COMPONENT' not in config_data:
+                builder = ret.ManifestV1Builder()
+                builder = lock_fee(builder, account, 100)
+                # builder = builder.account_withdraw(
+                #     account,
+                #     ret.Address(authority_resource),
+                #     ret.Decimal('1')
+                # )            
+                # builder = builder.take_from_worktop(
+                #     ret.Address(authority_resource),
+                #     ret.Decimal('1'),
+                #     ret.ManifestBuilderBucket("authority")
+                # )
+                builder = builder.call_function(
+                    ret.ManifestBuilderAddress.STATIC(ret.Address(exchange_package)),
+                    'StakingEarning',
+                    'instantiate',
+                    [
+                        manifest_owner_role
+                    ]
+                )
+                payload, intent = await gateway.build_transaction(builder, public_key, private_key)
+                await gateway.submit_transaction(payload)
+                addresses = await gateway.get_new_addresses(intent)
+                config_data['STAKING_POOL'] = addresses[1]
+                config_data['EARNING_COMPONENT'] = addresses[0]
 
-        #     exchange_component = config_data['EXCHANGE_COMPONENT']
-        #     envs.append(('EXCHANGE_COMPONENT', exchange_component))
-        #     print('EXCHANGE_COMPONENT:', exchange_component)
+            earning_component = config_data['EARNING_COMPONENT']
+            staking_pool = config_data['STAKING_POOL']
+            envs.append(('EARNING_COMPONENT', earning_component))
+            envs.append(('STAKING_POOL', staking_pool))
+            print('EARNING_COMPONENT:', earning_component)
+            print('STAKING_POOL:', staking_pool)
 
+            if 'CDP_COMPONENT' not in config_data:
+                builder = ret.ManifestV1Builder()
+                builder = lock_fee(builder, account, 100)
+                # builder = builder.account_withdraw(
+                #     account,
+                #     ret.Address(authority_resource),
+                #     ret.Decimal('1')
+                # )            
+                # builder = builder.take_from_worktop(
+                #     ret.Address(authority_resource),
+                #     ret.Decimal('1'),
+                #     ret.ManifestBuilderBucket("authority")
+                # )
+                builder = builder.call_function(
+                    ret.ManifestBuilderAddress.STATIC(ret.Address(exchange_package)),
+                    'CollateralDebtManager',
+                    'instantiate',
+                    [
+                        manifest_owner_role
+                    ]
+                )
+                payload, intent = await gateway.build_transaction(builder, public_key, private_key)
+                await gateway.submit_transaction(payload)
+                addresses = await gateway.get_new_addresses(intent)
+                config_data['CDP_COMPONENT'] = addresses[0]
+            cdp_component = config_data['CDP_COMPONENT']
+            envs.append(('CDP_COMPONENT', cdp_component))
+            print('CDP_COMPONENT:', cdp_component)
         #     manifest = f'''
         #         CALL_METHOD
         #             Address("{account.as_str()}")

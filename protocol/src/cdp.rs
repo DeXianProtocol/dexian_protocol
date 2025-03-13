@@ -77,7 +77,6 @@ mod cdp_mgr{
             authority => updatable_by:[]; 
             admin => updatable_by: [authority];
             operator => updatable_by: [authority];
-            protocol_caller => updatable_by:[authority];
         },
         methods{
             new_pool => restrict_to:[operator];
@@ -127,8 +126,7 @@ mod cdp_mgr{
 
         /// Collateral Debt Position Manager
         pub fn instantiate(
-            owner_role: OwnerRole,
-            caller_rule: AccessRule
+            owner_role: OwnerRole
         )->Global<CollateralDebtManager> {
             let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
             let op_rule = rule!(require(BASE_RESOURCE));
@@ -185,17 +183,17 @@ mod cdp_mgr{
                 transient_id_counter: 0u64,
                 cdp_res_mgr,
                 transient_nft_res_mgr
-            }.instantiate()
+            }
+            .instantiate()
             .prepare_to_globalize(owner_role)
             .with_address(address_reservation)
             .roles(roles!{
                 authority => rule!(require(AUTHORITY_RESOURCE));
                 admin => admin_rule.clone();
                 operator => op_rule.clone();
-                protocol_caller => caller_rule.clone();
-            }
-            )
+            })
             .globalize();
+            
             component
         }
 
@@ -208,7 +206,6 @@ mod cdp_mgr{
             liquidation_bonus: Decimal,
             insurance_ratio: Decimal,
             flashloan_fee_ratio: Decimal,
-            admin_rule: AccessRule,
             protocol_caller: Option<ComponentAddress>
         ) -> ResourceAddress{
             let pool_mgr_rule = if protocol_caller.is_some(){
@@ -226,7 +223,7 @@ mod cdp_mgr{
                 interest_model.clone(),
                 insurance_ratio,
                 flashloan_fee_ratio,
-                admin_rule,
+                rule!(require(BASE_AUTHORITY_RESOURCE)),
                 pool_mgr_rule
                 );
             let asset_state = AssetState{

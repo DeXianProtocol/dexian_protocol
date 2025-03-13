@@ -1,0 +1,36 @@
+CALL_METHOD
+    Address("${account}")
+    "lock_fee"
+    Decimal("10")
+;
+CALL_METHOD
+  Address("${account}")
+  "withdraw"
+  Address("${dx_token}")
+  Decimal("${amount}")
+;
+TAKE_FROM_WORKTOP
+  Address("${dx_token}")
+  Decimal("${amount}")
+  Bucket("bucket1")
+;
+CALL_METHOD
+    Address("${cdp_mgr}")
+    "borrow_variable"
+    Bucket("bucket1")
+    Address("${borrow_token}")
+    Decimal("${borrow_amount}")
+    "${price1}"
+    Address("${quote1}")
+    ${timestamp1}u64
+    "${signature1}"
+    ${price2}
+    ${quote2}
+    ${timestamp2}
+    ${signature2}
+;
+CALL_METHOD
+    Address("${account}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP")
+;
