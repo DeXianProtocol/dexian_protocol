@@ -1,6 +1,6 @@
 pub mod structs;
 use common::utils;
-use common::{_AUTHORITY_RESOURCE, _BASE_AUTHORITY_RESOURCE, _BASE_RESOURCE};
+use common::{_AUTHORITY_RESOURCE, _BASE_AUTHORITY_RESOURCE};
 use scrypto::prelude::*;
 use self::structs::*;
 
@@ -10,8 +10,11 @@ mod oracle_price{
 
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
     const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
-    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
 
+    enable_function_auth! {
+        instantiate => rule!(require(AUTHORITY_RESOURCE));
+    }
+    
     enable_method_auth!{
         roles{
             authority => updatable_by:[];
@@ -48,8 +51,8 @@ mod oracle_price{
             price_signer_pk: String,
             max_diff: u64
         ) -> Global<PriceOracle> {
-            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
-            let op_rule = rule!(require(BASE_RESOURCE));
+            let admin_rule = rule!(require(AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
             Self{
                 price_map: HashMap::new(),
                 pk_str: price_signer_pk.to_owned(),

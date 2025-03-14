@@ -1,7 +1,7 @@
 pub mod structs;
 
 use scrypto::prelude::*;
-use common::{_AUTHORITY_RESOURCE, _BASE_RESOURCE, _BASE_AUTHORITY_RESOURCE, RESERVE_WEEKS, A_WEEK_EPOCHS, EPOCH_OF_YEAR, BABYLON_START_EPOCH};
+use common::{_AUTHORITY_RESOURCE, _BASE_AUTHORITY_RESOURCE, RESERVE_WEEKS, A_WEEK_EPOCHS, EPOCH_OF_YEAR, BABYLON_START_EPOCH};
 pub use self::structs::*;
 
 #[blueprint]
@@ -10,11 +10,10 @@ pub use self::structs::*;
 mod validator_keeper{
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
     const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
-    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
 
-    // enable_function_auth! {
-    //     instantiate => rule!(require(AUTHORITY_RESOURCE));
-    // }
+    enable_function_auth! {
+        instantiate => rule!(require(AUTHORITY_RESOURCE));
+    }
 
     enable_method_auth!{
         roles{
@@ -42,8 +41,8 @@ mod validator_keeper{
         pub fn instantiate(
             owner_role: OwnerRole
         ) -> Global<ValidatorKeeper>{
-            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
-            let op_rule = rule!(require(BASE_RESOURCE));
+            let admin_rule = rule!(require(AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
             
             let component = Self{
                 validator_map: HashMap::new()
@@ -174,10 +173,6 @@ mod validator_keeper{
                     (sum + apy, count + Decimal::ONE)
                 });
             info!("sum:{}, count:{}", sum, count);
-            // Runtime::emit_event(DebugGetApy2{
-            //     sum,
-            //     count
-            // });
             if count.is_zero() {
                 Decimal::ZERO
             } else {
@@ -192,15 +187,6 @@ mod validator_keeper{
         
             // The last entry must be within the last week (inclusive).
             if latest_week_index < current_week_index -1 {
-                // Runtime::emit_event(DebugGetApy{
-                //     validator: _validator_addr.clone(),
-                //     last_epoch: latest.last_stake_epoch,
-                //     latest_index: Decimal::ZERO,
-                //     previous_index: Decimal::ZERO,
-                //     delta_epoch: Decimal::ZERO,
-                //     current_week_index,
-                //     latest_week_index
-                // });
                 info!("latest_week_index:{}/{}, current_week_index:{}", latest.last_stake_epoch, latest_week_index, current_week_index);
                 return None;
             }
@@ -213,15 +199,6 @@ mod validator_keeper{
                     let previous_index = previous.last_staked.checked_div(previous.last_lsu)?;
                     let delta_index = latest_index.checked_sub(previous_index)?;
                     let delta_epoch = Decimal::from(latest.last_stake_epoch - previous.last_stake_epoch);
-                    // Runtime::emit_event(DebugGetApy{
-                    //     validator: _validator_addr.clone(),
-                    //     last_epoch: latest.last_stake_epoch,
-                    //     current_week_index,
-                    //     latest_week_index,
-                    //     latest_index,
-                    //     previous_index,
-                    //     delta_epoch
-                    // });
                     info!(
                         "latest_index:{}/{}, previous_index:{}/{}, delta_index:{}, delta_epoch:{}/{}",
                         latest.last_staked, latest.last_lsu,

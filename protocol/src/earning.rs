@@ -12,7 +12,6 @@ mod staking_earning {
 
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
     const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
-    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
 
     enable_method_auth! {
         roles{
@@ -37,8 +36,8 @@ mod staking_earning {
         pub fn instantiate(
             owner_role: OwnerRole,
         ) -> Global<StakingEarning>{
-            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
-            let op_rule = rule!(require(BASE_RESOURCE));
+            let admin_rule = rule!(require(AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
             let (address_reservation, component_address) = Runtime::allocate_component_address(
                 StakingEarning::blueprint_id()
             );

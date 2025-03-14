@@ -1,7 +1,7 @@
 pub mod structs;
 
 use scrypto::prelude::*;
-use common::{_KEEPER_COMPONENT, KEEPER_PACKAGE};
+use common::{_KEEPER_COMPONENT, _AUTHORITY_RESOURCE, _BASE_AUTHORITY_RESOURCE, KEEPER_PACKAGE};
 pub use self::structs::*;
 
 
@@ -10,6 +10,12 @@ pub use self::structs::*;
 mod def_interest_model{
 
     const KEEPER_COMPONENT: ComponentAddress = _KEEPER_COMPONENT;
+    const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
+    const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
+
+    enable_function_auth! {
+        instantiate => rule!(require(AUTHORITY_RESOURCE));
+    }
 
     extern_blueprint! {
         KEEPER_PACKAGE,
@@ -59,12 +65,6 @@ mod def_interest_model{
                 "borrow_ratio: {}, stable_ratio:{}, bond_ratio:{}, apy:{}, validator_apy:{}", 
                 borrow_ratio, _stable_ratio, _bond_ratio, apy, validator_apy
             );
-            // Runtime::emit_event(DebugGetInterestRateEvent{
-            //     variable_rate: apy,
-            //     stable_ratio: _stable_ratio,
-            //     borrow_ratio,
-            //     validator_apy
-            // });
             (apy, if apy > validator_apy {apy} else {validator_apy})
         }
 
@@ -93,11 +93,3 @@ mod def_interest_model{
 
 
 }
-
-// #[derive(ScryptoSbor, ScryptoEvent)]
-// pub struct DebugGetInterestRateEvent{
-//     pub borrow_ratio: Decimal,
-//     pub stable_ratio: Decimal,
-//     pub variable_rate: Decimal,
-//     pub validator_apy: Decimal
-// }

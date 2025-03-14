@@ -62,7 +62,6 @@ mod cdp_mgr{
     const ORACLE_COMPONENT: ComponentAddress = _ORACLE_COMPONENT;
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
     const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;
-    const BASE_RESOURCE: ResourceAddress = _BASE_RESOURCE;
 
     extern_blueprint! {
         ORACLE_PACKAGE,
@@ -128,8 +127,8 @@ mod cdp_mgr{
         pub fn instantiate(
             owner_role: OwnerRole
         )->Global<CollateralDebtManager> {
-            let admin_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
-            let op_rule = rule!(require(BASE_RESOURCE));
+            let admin_rule = rule!(require(AUTHORITY_RESOURCE));
+            let op_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
             let (address_reservation, address) = Runtime::allocate_component_address(CollateralDebtManager::blueprint_id());
 
             Global::<PriceOracle>::try_from(ORACLE_COMPONENT).expect("oracle component not found");

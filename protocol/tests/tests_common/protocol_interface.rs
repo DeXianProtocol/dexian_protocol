@@ -21,4 +21,5 @@ impl ProtocolInterface {
     ) -> Self{
         Self { public_key, resources, components, ledger, test_account: account }
     }
+    
 }

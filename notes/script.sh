@@ -1,4 +1,3 @@
-
 resim reset
 result=$(resim new-account)
 export admin_account=$(echo $result|grep "Account component address: "|awk -F ": " '{print $2}'|awk -F " " '{print $1}')
@@ -83,11 +82,13 @@ export pkg=$(echo $result | awk -F ": " '{print $2}')
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_earning.rtm)
 export earning=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{if (NR==1) print $1}')
 export staking_pool=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{if (NR==2) print $1}')
+## TODO: dse addr
 export EARNING_COMPONENT=$earning
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_cdp_mgr.rtm)
 export cdp_mgr=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{print $1}')
 export CDP_COMPONENT=$cdp_mgr
 
+resim set-default-account $admin_account $admin_account_priv $admin_account_badge
 export token=$usdc
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_usdX_pool.rtm)
 export usdc_pool=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{print $1}')
@@ -167,6 +168,7 @@ resim run < ../notes/replace_holder.sh ../notes/manifests/borrow_variable.rtm
 
 resim set-current-epoch 15122
 resim set-default-account $p1 $p1_priv $p1_badge
+resim call-method $faucet "free_tokens"
 export repay_token=$usdt
 export amount=10
 export account=$p1
@@ -185,5 +187,6 @@ export amount=5000
 resim run < ../notes/replace_holder.sh ../notes/manifests/join.rtm
 
 export amount=100
-export faster=false
+export faster=true
+#export dse="resource_sim1t56vy6c0ulajlqmv6xfy6kjkg5v3j6daslcthuczanhyxqlqzktk8l"
 resim run < ../notes/replace_holder.sh ../notes/manifests/redeem_dse.rtm
