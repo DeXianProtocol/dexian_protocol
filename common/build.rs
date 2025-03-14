@@ -74,17 +74,17 @@ fn main() {
     // write_resource("KEEPER_REWARD_RESOURCE", "_KEEPER_REWARD_RESOURCE", &decoder, &mut f);
     // write_resource("FEE_OATH_RESOURCE", "_FEE_OATH_RESOURCE", &decoder, &mut f);
 
-    write_package("ORACLE_PACKAGE", "ORACLE_PACKAGE", &decoder, &mut f);
     write_package("KEEPER_PACKAGE", "KEEPER_PACKAGE", &decoder, &mut f);
     write_package("INTEREST_PACKAGE", "INTEREST_PACKAGE", &decoder, &mut f);
+    write_package("ORACLE_PACKAGE", "ORACLE_PACKAGE", &decoder, &mut f);    
     // write_package("FEE_DISTRIBUTOR_PACKAGE", "FEE_DISTRIBUTOR_PACKAGE", &decoder, &mut f);
     // write_package("FEE_DELEGATOR_PACKAGE", "FEE_DELEGATOR_PACKAGE", &decoder, &mut f);
     // write_package("PERMISSION_REGISTRY_PACKAGE", "PERMISSION_REGISTRY_PACKAGE", &decoder, &mut f);
     // write_package("TOKEN_WRAPPER_PACKAGE", "TOKEN_WRAPPER_PACKAGE", &decoder, &mut f);
 
-    write_component("ORACLE_COMPONENT", "_ORACLE_COMPONENT", &decoder, &mut f);
     write_component("KEEPER_COMPONENT", "_KEEPER_COMPONENT", &decoder, &mut f);
     write_component("INTEREST_COMPONENT", "_INTEREST_COMPONENT", &decoder, &mut f);
+    write_component("ORACLE_COMPONENT", "_ORACLE_COMPONENT", &decoder, &mut f);
     
     // write_component("FEE_DISTRIBUTOR_COMPONENT", "_FEE_DISTRIBUTOR_COMPONENT", &decoder, &mut f);
     // write_component("FEE_DELEGATOR_COMPONENT", "_FEE_DELEGATOR_COMPONENT", &decoder, &mut f);

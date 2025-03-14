@@ -70,6 +70,10 @@ mod cdp_mgr{
             fn get_price_quote_in_xrd(&self, res_addr: ResourceAddress) -> Decimal;
         }
     }
+
+    enable_function_auth! {
+        instantiate => rule!(require(AUTHORITY_RESOURCE));
+    }
     
     enable_method_auth!{
         roles{
@@ -78,7 +82,7 @@ mod cdp_mgr{
             operator => updatable_by: [authority];
         },
         methods{
-            new_pool => restrict_to:[operator];
+            new_pool => restrict_to:[admin];
             withdraw_insurance => restrict_to: [operator, OWNER];
             set_close_factor =>restrict_to: [operator, OWNER];
 

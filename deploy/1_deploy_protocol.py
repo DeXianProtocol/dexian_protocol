@@ -14,7 +14,7 @@ load_dotenv()
 
 from tools.gateway import Gateway
 from tools.accounts import new_account, load_account
-from tools.manifests import lock_fee, deposit_all, mint_owner_badge, mint_authority, mint_base_authority
+from tools.manifests import lock_fee, create_proof_by_fungible_resource, deposit_all, mint_owner_badge, mint_authority, mint_base_authority
 from tools.manifests import create_base, mint_protocol_resource, create_keeper_reward, create_lp, create_referral_str, create_recovery_key_str
 timestamp = datetime.datetime.now().strftime("%Y%m%d%H")
 
@@ -71,12 +71,12 @@ async def main():
     async with ClientSession(connector=TCPConnector(ssl=False)) as session:
         oracle_key_0 = 'a5bc3d9296bda1e52f96bf0a65238998877dbddb0703bd37ef1f18a6ffce458a'
 
-        clean('common')
-        clean("faucet")
-        clean('keeper')
-        clean('interest')
-        clean('oracle')
-        clean('protocol')
+        # clean('common')
+        # clean("faucet")
+        # clean('keeper')
+        # clean('interest')
+        # clean('oracle')
+        # clean('protocol')
         
 
         gateway = Gateway(session)
@@ -277,6 +277,7 @@ async def main():
             if 'KEEPER_COMPONENT' not in config_data:
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
+                builder = create_proof_by_fungible_resource(builder, account, ret.Address(authority_resource), ret.Decimal("1"))
                 builder = builder.call_function(
                     ret.ManifestBuilderAddress.STATIC(ret.Address(keeper_package)),
                     'ValidatorKeeper',
@@ -313,6 +314,7 @@ async def main():
             if 'INTEREST_COMPONENT' not in config_data:
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
+                builder = create_proof_by_fungible_resource(builder, account, ret.Address(authority_resource), ret.Decimal("1"))
                 builder = builder.call_function(
                     ret.ManifestBuilderAddress.STATIC(ret.Address(interest_package)),
                     'DefInterestModel',
@@ -353,6 +355,7 @@ async def main():
                 oracle_key_bytes_0 = ret.ManifestBuilderValue.STRING_VALUE(oracle_key_0)
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
+                builder = create_proof_by_fungible_resource(builder, account, ret.Address(authority_resource), ret.Decimal("1"))
                 builder = builder.call_function(
                     ret.ManifestBuilderAddress.STATIC(ret.Address(oracle_package)),
                     'PriceOracle',
@@ -393,16 +396,7 @@ async def main():
             if 'EARNING_COMPONENT' not in config_data:
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
-                # builder = builder.account_withdraw(
-                #     account,
-                #     ret.Address(authority_resource),
-                #     ret.Decimal('1')
-                # )            
-                # builder = builder.take_from_worktop(
-                #     ret.Address(authority_resource),
-                #     ret.Decimal('1'),
-                #     ret.ManifestBuilderBucket("authority")
-                # )
+                builder = create_proof_by_fungible_resource(builder, account, ret.Address(authority_resource), ret.Decimal("1"))
                 builder = builder.call_function(
                     ret.ManifestBuilderAddress.STATIC(ret.Address(exchange_package)),
                     'StakingEarning',
@@ -427,16 +421,7 @@ async def main():
             if 'CDP_COMPONENT' not in config_data:
                 builder = ret.ManifestV1Builder()
                 builder = lock_fee(builder, account, 100)
-                # builder = builder.account_withdraw(
-                #     account,
-                #     ret.Address(authority_resource),
-                #     ret.Decimal('1')
-                # )            
-                # builder = builder.take_from_worktop(
-                #     ret.Address(authority_resource),
-                #     ret.Decimal('1'),
-                #     ret.ManifestBuilderBucket("authority")
-                # )
+                builder = create_proof_by_fungible_resource(builder, account, ret.Address(authority_resource), ret.Decimal("1"))
                 builder = builder.call_function(
                     ret.ManifestBuilderAddress.STATIC(ret.Address(exchange_package)),
                     'CollateralDebtManager',

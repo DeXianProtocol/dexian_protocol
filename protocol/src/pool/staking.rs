@@ -115,7 +115,7 @@ mod staking_pool {
             unit_bucket
         }
 
-        pub fn redeem(&mut self, validator_addr: ComponentAddress, bucket: FungibleBucket) -> (NonFungibleBucket, NonFungibleLocalId, Decimal){
+        pub fn redeem(&mut self, validator_addr: ComponentAddress, bucket: FungibleBucket) -> NonFungibleBucket{
             assert_resource(&bucket.resource_address(), &self.staking_unit_res_mgr.address());
             assert!(self.lsu_map.get(&validator_addr).is_some(), "the validator address not exists");
             let (_, _, value_per_share) = self.get_values();
@@ -134,9 +134,6 @@ mod staking_pool {
             let unstake_lsu_bucket = lsu.take_advanced(redeem_value.checked_div(lsu_index).unwrap(), WithdrawStrategy::Rounded(RoundingMode::ToZero));
             // let unstake_amount = unstake_lsu_bucket.amount();
             let claim_nft = validator.unstake(unstake_lsu_bucket);
-            let claim_nft_id = claim_nft.non_fungible_local_id();
-            let unstake_data = NonFungibleResourceManager::from(claim_nft.resource_address()).get_non_fungible_data::<UnstakeData>(&claim_nft_id);
-
             self.staking_unit_res_mgr.burn(bucket);
             // Runtime::emit_event(Event2{
             //     amount,
@@ -147,8 +144,7 @@ mod staking_pool {
             //     unstake_amount,
             //     claim_amount: unstake_data.claim_amount
             // });
-
-            (claim_nft, claim_nft_id, unstake_data.claim_amount)
+            claim_nft
             
         }
 

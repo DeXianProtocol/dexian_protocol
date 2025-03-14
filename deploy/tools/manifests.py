@@ -3,6 +3,14 @@ from radix_engine_toolkit import *
 def lock_fee(builder: ManifestV1Builder, account: Address, fee: int) -> ManifestV1Builder:
     return builder.account_lock_fee(account, Decimal(str(fee)))
 
+def create_proof_by_fungible_resource(
+        builder: ManifestV1Builder,
+        account: Address,
+        resource_address: ResourceAddresses,
+        amount: Decimal
+        ) -> ManifestV1Builder:
+    return builder.account_create_proof_of_amount(account, resource_address, amount)
+
 def deposit_all(builder: ManifestV1Builder, account: Address) -> ManifestV1Builder:
     return builder.account_deposit_entire_worktop(account)
 

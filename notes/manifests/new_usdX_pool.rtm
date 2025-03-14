@@ -6,7 +6,7 @@ CALL_METHOD
 CALL_METHOD
     Address("${admin_account}")
     "create_proof_of_amount"
-    Address("${base_auth}")
+    Address("${auth}")
     Decimal("1")
 ;
 CALL_METHOD
