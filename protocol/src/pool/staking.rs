@@ -1,6 +1,5 @@
 use scrypto::prelude::*;
 use common::utils::*;
-use keeper::UnstakeData;
 
 
 #[blueprint]
@@ -33,6 +32,7 @@ mod staking_pool {
     impl StakingResourePool {
         
         pub fn instantiate(
+            owner_role: OwnerRole,
             underlying_token: ResourceAddress,
             admin_rule: AccessRule,
             op_rule: AccessRule
@@ -40,10 +40,11 @@ mod staking_pool {
             let (address_reservation, address) =
                 Runtime::allocate_component_address(StakingResourePool::blueprint_id());
 
-            let staking_unit_res_mgr: FungibleResourceManager = ResourceBuilder::new_fungible(OwnerRole::Fixed(admin_rule.clone()))
+            let staking_unit_res_mgr: FungibleResourceManager = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(init{
                     "pool" => address, locked;
                     "symbol" => "dseXRD", locked;
+                    "underlying" => underlying_token, locked;
                     "name" => "DeXian Staking Earning Token ", locked;
                     "icon_url" => "https://dexian.io/images/dse.png", updatable;
                     "info_url" => "https://dexian.io", updatable;
@@ -65,7 +66,7 @@ mod staking_pool {
                 underlying_token,
                 staking_unit_res_mgr
             }.instantiate()
-            .prepare_to_globalize(OwnerRole::Fixed(admin_rule.clone()))
+            .prepare_to_globalize(owner_role)
             .with_address(address_reservation)
             // .metadata(metadata! {
             //     // "pool_resources" => vec![underlying_token, staking_unit_token], locked;

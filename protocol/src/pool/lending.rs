@@ -116,6 +116,7 @@ mod lend_pool {
     impl LendResourcePool {
 
         pub fn instantiate(
+            owner_role: OwnerRole,
             share_divisibility: u8,
             underlying_token: ResourceAddress,
             interest_model: InterestModel,
@@ -132,10 +133,10 @@ mod lend_pool {
             let dx_rule = rule!(require(global_caller(address)));
             let deposit_share_res_mgr = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(init{
-                    //pool ==> , pool_unit==>
+                    "pool" => address, locked;
+                    "underlying" => underlying_token, locked;
                     "symbol" => format!("dx{}", origin_symbol), locked;
                     "name" => format!("DeXian Lending LP token({}) ", origin_symbol), locked;
-                    "underlying" => underlying_token, locked;
                     "icon_url" => "https://dexian.io/images/dx.png", updatable;
                     "info_url" => "https://dexian.io", updatable;
                 }))
@@ -172,7 +173,7 @@ mod lend_pool {
                 flashloan_fee_ratio,
                 deposit_share_res_mgr
             }.instantiate()
-            .prepare_to_globalize(OwnerRole::Fixed(admin_rule.clone()))
+            .prepare_to_globalize(owner_role)
             .roles(
                 roles!{
                     admin => admin_rule.clone();

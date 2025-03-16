@@ -46,7 +46,7 @@ mod staking_earning {
                 StakingEarning::blueprint_id()
             );
             let caller_rule = rule!(require(global_caller(component_address)));
-            let (staking_pool,dse_token) = StakingResourePool::instantiate(XRD, admin_rule.clone(), caller_rule);
+            let (staking_pool,dse_token) = StakingResourePool::instantiate(owner_role.clone(), XRD, admin_rule.clone(), caller_rule);
             
             let component = Self{
                 staking_pool,

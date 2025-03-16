@@ -1,5 +1,5 @@
 import qrcode
-from typing import Tuple
+from typing import Tuple, Dict, List
 import io
 import radix_engine_toolkit as ret
 import asyncio
@@ -71,12 +71,12 @@ async def main():
     async with ClientSession(connector=TCPConnector(ssl=False)) as session:
         oracle_key_0 = 'a5bc3d9296bda1e52f96bf0a65238998877dbddb0703bd37ef1f18a6ffce458a'
 
-        # clean('common')
-        # clean("faucet")
-        # clean('keeper')
-        # clean('interest')
-        # clean('oracle')
-        # clean('protocol')
+        clean('common')
+        clean("faucet")
+        clean('keeper')
+        clean('interest')
+        clean('oracle')
+        clean('protocol')
         
 
         gateway = Gateway(session)
@@ -319,10 +319,13 @@ async def main():
                     ret.ManifestBuilderAddress.STATIC(ret.Address(interest_package)),
                     'DefInterestModel',
                     'instantiate',
-                    [ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.2")),
-                    ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.5")),
-                    ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.55")),
-                    ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.45"))]
+                    [
+                        manifest_owner_role,
+                        ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.2")),
+                        ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.5")),
+                        ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.55")),
+                        ret.ManifestBuilderValue.DECIMAL_VALUE(ret.Decimal("0.45"))
+                    ]
                 )
                 payload, intent = await gateway.build_transaction(builder, public_key, private_key)
                 await gateway.submit_transaction(payload)
@@ -410,6 +413,7 @@ async def main():
                 addresses = await gateway.get_new_addresses(intent)
                 config_data['STAKING_POOL'] = addresses[1]
                 config_data['EARNING_COMPONENT'] = addresses[0]
+                config_data['DSE_RESOURCE'] = addresses[2]
 
             earning_component = config_data['EARNING_COMPONENT']
             staking_pool = config_data['STAKING_POOL']
@@ -437,98 +441,10 @@ async def main():
             cdp_component = config_data['CDP_COMPONENT']
             envs.append(('CDP_COMPONENT', cdp_component))
             print('CDP_COMPONENT:', cdp_component)
-        #     manifest = f'''
-        #         CALL_METHOD
-        #             Address("{account.as_str()}")
-        #             "lock_fee"
-        #             Decimal("10")
-        #         ;
-        #         CALL_METHOD
-        #             Address("{account.as_str()}")
-        #             "create_proof_of_amount"
-        #             Address("{owner_resource}")
-        #             Decimal("4")
-        #         ;
-        #         CALL_METHOD
-        #             Address("{env_registry_component}")
-        #             "set_variables"
-        #             Array<Tuple>(
-        #                 Tuple(
-        #                     "protocol_resource",
-        #                     "{protocol_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "lp_resource",
-        #                     "{lp_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "referral_resource",
-        #                     "{referral_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "recovery_key_resource",
-        #                     "{recovery_key_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "base_resource",
-        #                     "{base_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "keeper_reward_resource",
-        #                     "{keeper_reward_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "fee_oath_resource",
-        #                     "{fee_oath_resource}"
-        #                 ),
-        #                 Tuple(
-        #                     "token_wrapper_component",
-        #                     "{token_wrapper_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "config_component",
-        #                     "{config_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "pool_component",
-        #                     "{pool_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "referral_generator_component",
-        #                     "{referral_generator_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "permission_registry_component",
-        #                     "{permission_registry_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "oracle_component",
-        #                     "{oracle_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "fee_distributor_component",
-        #                     "{fee_distributor_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "fee_delegator_component",
-        #                     "{fee_delegator_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "exchange_component",
-        #                     "{exchange_component}"
-        #                 ),
-        #                 Tuple(
-        #                     "account_package",
-        #                     "{account_package}"
-        #                 )
-        #             )
-        #         ;
-        #     '''
 
-        #     payload, intent = await gateway.build_transaction_str(manifest, public_key, private_key)
-        #     await gateway.submit_transaction(payload)
-        #     status = await gateway.get_transaction_status(intent)
-        #     print('Register exchange:', status)
+            await create_usdx_pool(gateway, config_data, account, public_key, private_key, config_data['USDC_RESOURCE'], "USDC_POOL", "DX_USDC", envs)
+            await create_usdx_pool(gateway, config_data, account, public_key, private_key, config_data['USDT_RESOURCE'], "USDT_POOL", "DX_USDT", envs)
+            await create_xrd_pool(gateway, config_data, account, public_key, private_key, network_config['xrd'], envs)
 
             print(f'---------- DEPLOY {network_config["network_name"].upper()} COMPLETE ----------')
 
@@ -605,6 +521,103 @@ async def main():
         # await gateway.submit_transaction(payload)
 
         # print('WITHDRAW SUBMITTED:', intent)
+
+async def create_usdx_pool(
+        gateway: Gateway, config_data: Dict[str, str], 
+        account:ret.Address, public_key: ret.PublicKey, private_key: ret.PrivateKey, 
+        token:str, env_pool_name:str,  env_dx_name: str, envs: List[Tuple[str, str]]):
+    if env_pool_name not in config_data or env_dx_name not in config_data:
+        owner = config_data['OWNER_RESOURCE']
+        owner_amount = 4
+        auth = config_data['AUTHORITY_RESOURCE']
+        cdp_mgr = config_data['CDP_COMPONENT']
+        manifest = f'''
+                CALL_METHOD
+                    Address("{account.as_str()}")
+                    "lock_fee"
+                    Decimal("10")
+                ;
+                CALL_METHOD
+                    Address("{account.as_str()}")
+                    "create_proof_of_amount"
+                    Address("{auth}")
+                    Decimal("1")
+                ;
+                CALL_METHOD
+                    Address("{cdp_mgr}")
+                    "new_pool"
+                    18u8
+                    Address("{token}")
+                    Enum<1u8>()
+                    Decimal("0.85")
+                    Decimal("0.87")
+                    Decimal("0.02")
+                    Decimal("0.10")
+                    Decimal("0.001")
+                    None
+                ;
+            '''
+        #print(manifest)
+        payload, intent = await gateway.build_transaction_str(manifest, public_key, private_key)
+        await gateway.submit_transaction(payload)
+        addresses = await gateway.get_new_addresses(intent)
+        config_data[env_pool_name] = addresses[0]
+        config_data[env_dx_name] = addresses[1]
+    pool = config_data[env_pool_name]
+    dx = config_data[env_dx_name]
+    envs.append((env_dx_name, pool))
+    print(f"{env_pool_name}:{pool}")
+    print(f"{env_dx_name}:{dx}")
+
+async def create_xrd_pool(
+        gateway: Gateway, config_data: Dict[str, str], 
+        account:ret.Address, public_key: ret.PublicKey, private_key: ret.PrivateKey,
+        xrd: str, envs: List[Tuple[str, str]]
+        ):
+    if "XRD_POOL" not in config_data or "DX_XRD" not in config_data:
+        owner = config_data['OWNER_RESOURCE']
+        owner_amount = 4
+        auth = config_data['AUTHORITY_RESOURCE']
+        cdp_mgr = config_data['CDP_COMPONENT']
+        earning = config_data['EARNING_COMPONENT']
+        token = xrd
+        manifest = f'''
+                CALL_METHOD
+                    Address("{account.as_str()}")
+                    "lock_fee"
+                    Decimal("10")
+                ;
+                CALL_METHOD
+                    Address("{account.as_str()}")
+                    "create_proof_of_amount"
+                    Address("{auth}")
+                    Decimal("1")
+                ;
+                CALL_METHOD
+                    Address("{cdp_mgr}")
+                    "new_pool"
+                    18u8
+                    Address("{token}")
+                    Enum<0u8>()
+                    Decimal("0.85")
+                    Decimal("0.87")
+                    Decimal("0.02")
+                    Decimal("0.10")
+                    Decimal("0.001")
+                    Some(Address("{earning}"))
+                ;
+            '''
+        #print(manifest)
+        payload, intent = await gateway.build_transaction_str(manifest, public_key, private_key)
+        await gateway.submit_transaction(payload)
+        addresses = await gateway.get_new_addresses(intent)
+        config_data["XRD_POOL"] = addresses[0]
+        config_data["DX_XRD"] = addresses[1]
+    dx_xrd = config_data["DX_XRD"]
+    xrd_pool = config_data['XRD_POOL']
+    envs.append(('DX_XRD', dx_xrd))
+    print('DX_XRD:', dx_xrd)
+    print("XRD_POOL:", xrd_pool)
 
 if __name__ == '__main__':
     asyncio.run(main())

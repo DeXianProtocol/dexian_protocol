@@ -1,4 +1,5 @@
 from radix_engine_toolkit import *
+from typing import Tuple
 
 def lock_fee(builder: ManifestV1Builder, account: Address, fee: int) -> ManifestV1Builder:
     return builder.account_lock_fee(account, Decimal(str(fee)))
@@ -610,3 +611,4 @@ def create_keeper_reward(builder: ManifestV1Builder, owner_role: OwnerRole, auth
         metadata=metadata,
         address_reservation=None,
     )
+

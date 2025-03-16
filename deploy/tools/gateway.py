@@ -223,7 +223,7 @@ class Gateway:
         network_config = await self.network_configuration()
         network_id = network_config['network_id']
 
-        manifest: ret.TransactionManifest = ret.TransactionManifest(ret.Instructions.from_string(manifest, network_id), blobs)
+        manifest: ret.TransactionManifestV1 = ret.TransactionManifestV1(ret.InstructionsV1.from_string(manifest, network_id), blobs)
         manifest.statically_validate(network_id)
         header: ret.TransactionHeaderV1 = ret.TransactionHeaderV1(
             network_id=network_id,

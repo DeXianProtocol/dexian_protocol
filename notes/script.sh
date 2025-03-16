@@ -82,7 +82,7 @@ export pkg=$(echo $result | awk -F ": " '{print $2}')
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_earning.rtm)
 export earning=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{if (NR==1) print $1}')
 export staking_pool=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{if (NR==2) print $1}')
-## TODO: dse addr
+export dse=$(echo $result | grep "Resource: " | awk -F "Resource: " '{if (NR==1) print $2}')
 export EARNING_COMPONENT=$earning
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_cdp_mgr.rtm)
 export cdp_mgr=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{print $1}')

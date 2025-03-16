@@ -8,5 +8,21 @@
     "FAUCET_OWNER_RESOURCE": "resource_tdx_2_1tkr7vc0f6dhfawhy3483stjv7pwhfshy5jsv3ffyml3yls9ncgcsr6",
     "USDC_RESOURCE": "resource_tdx_2_1tkq8y3heejeya3ztjpv0x7xad0mx29gnyj2avkwqnyjwe266xrt5uw",
     "USDT_RESOURCE": "resource_tdx_2_1t4wlj28jvzw405hlas3xcl5fwtsf95qy4fgu9zel85sgu0mcwkwxek",
-    "KEEPER_PACKAGE": "package_tdx_2_1p5m4pch2puur6zvkryd3pxdcn4ap95zht4dzptswm75zf40k8pu7fd"
+    "KEEPER_PACKAGE": "package_tdx_2_1p5m4pch2puur6zvkryd3pxdcn4ap95zht4dzptswm75zf40k8pu7fd",
+    "KEEPER_COMPONENT": "component_tdx_2_1cryxqneyrrpeehf67gmaeqkkuzcq0lg7dms0xp3k0ulf6amlygfqur",
+    "INTEREST_PACKAGE": "package_tdx_2_1p5yj7stqhkcy9tyunz67nm50vhtskxgx4nsmykwnn99y0k5ey4whuu",
+    "INTEREST_COMPONENT": "component_tdx_2_1cq42afqn25fmty8r9vgv7dev824a2zz9vu88839guwsdqn38ah8prn",
+    "ORACLE_PACKAGE": "package_tdx_2_1ph0xgg6jx726jgkfc4c4kef5grzkjh6enqrk8ldz04x55dswv97m53",
+    "ORACLE_COMPONENT": "component_tdx_2_1cqnfnzvxm6h54lh4mpvev7n4r60u6snxk3mq2q5539wvzqm066rumq",
+    "PROTOCOL_PACKAGE": "package_tdx_2_1pkchukj2fpxjq4jxfscvphge52wnlfhxxtdgernru5uq75hsgfttl0",
+    "STAKING_POOL": "component_tdx_2_1cqfs436lntjqdkhmdxkfqzxemyvdk9ksnymxdmrlamppu2sl2qjfx2",
+    "EARNING_COMPONENT": "component_tdx_2_1crnwd6sdhvkswh009gr0j783phye2qycjakvttefy9cty8ppc993c8",
+    "DSE_RESOURCE": "resource_tdx_2_1t4hezsgc774p6aucequasr86wzjgzgzv98d4yjl7em2nkxj2xqnsrp",
+    "CDP_COMPONENT": "component_tdx_2_1crlcesm5024nfdzv6lmtnwsf56t29lkluuavw8nlkvsfcdk8me5xz5",
+    "USDC_POOL": "component_tdx_2_1cr2tt46dpg2xs88t00sa7ptk4dqy30thjnfzmyycg4t673vu5pzer5",
+    "DX_USDC": "resource_tdx_2_1tk38khe2j5md4dnukmtx7kg07vlz536ydf4qpfx48casefznwm0emn",
+    "USDT_POOL": "component_tdx_2_1cpjeva4r4zv4duc9gq5tfzsekhpjztrf5zxa8njsdcmlf5lfyv3jfm",
+    "DX_USDT": "resource_tdx_2_1t5n4th6rpp3jvvcgfg2juc800aa8gv4zcuxygxafepf5p0rug6hvuw",
+    "XRD_POOL": "component_tdx_2_1cq5hd4ds8tqzngnx5uxw3zzzvr5jsnxz9rwt3pmzw5545xrmy7vk2s",
+    "DX_XRD": "resource_tdx_2_1tkh5wxpf8t05lnmafr974dp6eemvmzquq88gnk0304j6pln2p2jpsq"
 }

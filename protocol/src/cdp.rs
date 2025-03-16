@@ -201,6 +201,7 @@ mod cdp_mgr{
         }
 
         pub fn new_pool(&mut self, 
+            owner_role: OwnerRole,
             share_divisibility: u8,
             underlying_token_addr: ResourceAddress,
             interest_model: InterestModel,
@@ -221,6 +222,7 @@ mod cdp_mgr{
                 rule!(require(global_caller(self.self_cmp_addr)))
             };
             let (lend_res_pool, dx_token_addr) = LendResourcePool::instantiate(
+                owner_role,
                 share_divisibility,
                 underlying_token_addr,
                 interest_model.clone(),
