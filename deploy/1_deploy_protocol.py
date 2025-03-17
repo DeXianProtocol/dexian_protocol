@@ -546,6 +546,16 @@ async def create_usdx_pool(
                 CALL_METHOD
                     Address("{cdp_mgr}")
                     "new_pool"
+                    Enum<2u8>(
+                        Enum<2u8>(
+                            Enum<0u8>(
+                                Enum<1u8>(
+                                    Decimal("{owner_amount}"),
+                                    Address("{owner}")
+                                )
+                            )
+                        )
+                    )
                     18u8
                     Address("{token}")
                     Enum<1u8>()
@@ -596,6 +606,16 @@ async def create_xrd_pool(
                 CALL_METHOD
                     Address("{cdp_mgr}")
                     "new_pool"
+                    Enum<2u8>(
+                        Enum<2u8>(
+                            Enum<0u8>(
+                                Enum<1u8>(
+                                    Decimal("{owner_amount}"),
+                                    Address("{owner}")
+                                )
+                            )
+                        )
+                    )                    
                     18u8
                     Address("{token}")
                     Enum<0u8>()

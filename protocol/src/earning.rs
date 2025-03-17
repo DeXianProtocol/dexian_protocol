@@ -80,12 +80,8 @@ mod staking_earning {
             if claim_epoch <= current_epoch {
                 let bucket = validator.claim_xrd(claim_nft);
                 Runtime::emit_event(ClaimXrdEvent{
-                    rate: Decimal::ZERO,
-                    fee: Decimal::ZERO,
-                    xrd_amount: bucket.amount(),
+                    claim_nft_id: nft_id,
                     validator_addr,
-                    nft_addr,
-                    nft_id,
                     claim_amount,
                     claim_epoch,
                     current_epoch
@@ -99,13 +95,11 @@ mod staking_earning {
                 let principal = calc_principal(unstake_data.claim_amount, stable_rate, Decimal::from(EPOCH_OF_YEAR), remain_epoch);
                 let borrow_bucket = cdp_mgr.staking_borrow(XRD, principal, claim_nft, unstake_data.claim_amount.checked_sub(principal).unwrap()); 
                 let xrd_amount = borrow_bucket.amount();
-                Runtime::emit_event(ClaimXrdEvent{
+                Runtime::emit_event(NftFasterRedeemEvent{
                     rate: stable_rate,
-                    fee: claim_amount.checked_sub(xrd_amount).unwrap(),
+                    claim_nft:nft_id,
                     xrd_amount,
                     validator_addr,
-                    nft_addr,
-                    nft_id,
                     claim_amount,
                     claim_epoch,
                     current_epoch
@@ -133,6 +127,12 @@ mod staking_earning {
             
             if faster {
                 let (xrd_bucket, _) = self.claim_xrd(cdp_mgr, claim_nft_bucket);
+                Runtime::emit_event(FasterRedeemEvent{
+                    res_addr,
+                    amount,
+                    validator_addr,
+                    xrd_amount: xrd_bucket.amount()
+                });
                 xrd_bucket.into()
             }
             else{
@@ -165,27 +165,30 @@ pub struct NormalRedeemEvent{
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
-pub struct NftFasterRedeemEvent{
-    pub res_addr: ResourceAddress,
-    pub nft_id: NonFungibleGlobalId,
-    pub claim_amount: Decimal,
-    pub claim_epoch: Decimal,
+pub struct FasterRedeemEvent{
     pub validator_addr: ComponentAddress,
+    pub res_addr: ResourceAddress,
+    pub amount: Decimal,
+    pub xrd_amount: Decimal
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct NftFasterRedeemEvent{
+    pub rate: Decimal,
+    pub validator_addr: ComponentAddress,
+    pub claim_nft: NonFungibleGlobalId,
+    pub claim_amount: Decimal,
+    pub claim_epoch: u64,
     pub xrd_amount: Decimal,
-    pub fee: Decimal,
-    pub settle_gas: Decimal
+    pub current_epoch: u64
 }
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ClaimXrdEvent{
-    pub rate: Decimal,
-    pub xrd_amount: Decimal,
     pub validator_addr: ComponentAddress,
-    pub nft_addr: ResourceAddress,
-    pub nft_id: NonFungibleGlobalId,
+    pub claim_nft_id: NonFungibleGlobalId,
     pub claim_amount: Decimal,
     pub claim_epoch: u64,
-    pub current_epoch: u64,
-    pub fee: Decimal
+    pub current_epoch: u64
 }
 

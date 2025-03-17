@@ -128,23 +128,12 @@ mod staking_pool {
             let lsu_amount = lsu.amount();
             let lsu_value = validator.get_redemption_value(lsu_amount);
             
-            
-            // assert_amount(lsu_value, redeem_value);
             assert!(redeem_value <= lsu_value, "the target value {} less than expect {}!", lsu_value, redeem_value);
             let lsu_index = lsu_value.checked_div(lsu_amount).unwrap();
             let unstake_lsu_bucket = lsu.take_advanced(redeem_value.checked_div(lsu_index).unwrap(), WithdrawStrategy::Rounded(RoundingMode::ToZero));
             // let unstake_amount = unstake_lsu_bucket.amount();
             let claim_nft = validator.unstake(unstake_lsu_bucket);
             self.staking_unit_res_mgr.burn(bucket);
-            // Runtime::emit_event(Event2{
-            //     amount,
-            //     value_per_share,
-            //     redeem_value,
-            //     lsu_amount,
-            //     lsu_value,
-            //     unstake_amount,
-            //     claim_amount: unstake_data.claim_amount
-            // });
             claim_nft
             
         }
