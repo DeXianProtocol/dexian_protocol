@@ -7,7 +7,7 @@ use crate::cdp::cdp_mgr::CollateralDebtManager;
 
 
 #[blueprint]
-#[events(NormalRedeemEvent, ClaimXrdEvent)]
+#[events(NormalRedeemEvent, FasterRedeemEvent, NftFasterRedeemEvent, ClaimXrdEvent)]
 mod staking_earning {
 
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;

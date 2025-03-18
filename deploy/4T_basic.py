@@ -49,22 +49,22 @@ async def main():
         usdt = config_data['USDT_RESOURCE']
         dse = config_data['DSE_RESOURCE']
         xrd = network_config['xrd']
-        # await faucet_tokens(gateway, network_config, faucet, priv1, pub1, account1)
-        # await faucet_tokens(gateway, network_config, faucet, priv2, pub2, account2)
-        # await faucet_tokens(gateway, network_config, faucet, priv3, pub3, account3)
+        await faucet_tokens(gateway, network_config, faucet, priv1, pub1, account1)
+        await faucet_tokens(gateway, network_config, faucet, priv2, pub2, account2)
+        await faucet_tokens(gateway, network_config, faucet, priv3, pub3, account3)
 
-        # await supply(gateway, config_data, account1, pub1, priv1, network_config['xrd'], "4000")
-        # await supply(gateway, config_data, account2, pub2, priv2, network_config['xrd'], "4000")
-        # await supply(gateway, config_data, account3, pub3, priv3, usdc, "100")
-        # await supply(gateway, config_data, account3, pub3, priv3, usdt, "100")
+        await supply(gateway, config_data, account1, pub1, priv1, network_config['xrd'], "4000")
+        await supply(gateway, config_data, account2, pub2, priv2, network_config['xrd'], "4000")
+        await supply(gateway, config_data, account3, pub3, priv3, usdc, "100")
+        await supply(gateway, config_data, account3, pub3, priv3, usdt, "100")
 
         dx_xrd = config_data['DX_XRD']
         validator = getenv("validator")
         amount = "2000"
         # await borrow(gateway, session, network_config['network_name'], config_data, account1, pub1, priv1, dx_xrd, "3000", usdc, "10", "usdc", None)
         # await borrow(gateway, session, network_config['network_name'], config_data, account2, pub2, priv2, dx_xrd, "3000", usdt, "10", "usdt", None)
-        # await dse_join(gateway, account3, pub3, priv3, config_data, validator, xrd, amount)
-        # await dse_redeem(gateway, account3, pub3, priv3, config_data, validator, dse, "100", False)
+        await dse_join(gateway, account3, pub3, priv3, config_data, validator, xrd, amount)
+        await dse_redeem(gateway, account3, pub3, priv3, config_data, validator, dse, "100", False)
         await dse_redeem(gateway, account3, pub3, priv3, config_data, validator, dse, "200", True)
     
 
