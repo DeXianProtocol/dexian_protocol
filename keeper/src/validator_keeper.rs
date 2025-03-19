@@ -54,7 +54,24 @@ mod validator_keeper{
                     operator => op_rule;
                     authority => rule!(require(AUTHORITY_RESOURCE));
                 )
-            ).globalize();
+            )
+            .enable_component_royalties(component_royalties! {
+                roles {
+                    royalty_setter => OWNER;
+                    royalty_setter_updater => OWNER;
+                    royalty_locker => OWNER;
+                    royalty_locker_updater => rule!(deny_all);
+                    royalty_claimer => OWNER;
+                    royalty_claimer_updater => OWNER;
+                },
+                init {
+                    fill_validator_staking => Free, locked;
+                    log_validator_staking => Free, locked;
+                    insert_validator_staking => Free, locked;
+                    get_active_set_apy => Usd(dec!(0.1)), updatable;
+                }
+            })
+            .globalize();
             
             component
         }
