@@ -62,8 +62,8 @@ async def main():
         dx_usdc = config_data['DX_USDC']
         validator = getenv("validator")
         amount = "2000"
-        # await borrow(gateway, session, network_config['network_name'], config_data, account1, pub1, priv1, dx_xrd, "3000", usdc, "10", "usdc", None)
-        # await borrow(gateway, session, network_config['network_name'], config_data, account2, pub2, priv2, dx_xrd, "3000", usdt, "10", "usdt", None)
+        await borrow(gateway, session, network_config['network_name'], config_data, account1, pub1, priv1, dx_xrd, "3000", usdc, "10", "usdc", None)
+        await borrow(gateway, session, network_config['network_name'], config_data, account2, pub2, priv2, dx_xrd, "3000", usdt, "10", "usdt", None)
         await borrow(gateway, session, network_config['network_name'], config_data, account3, pub3, priv3, dx_usdc, "50", xrd, "3000", "usdc", None)
         # await dse_join(gateway, account3, pub3, priv3, config_data, validator, xrd, amount)
         # await dse_redeem(gateway, account3, pub3, priv3, config_data, validator, dse, "100", False)

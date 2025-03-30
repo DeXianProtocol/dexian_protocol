@@ -69,7 +69,7 @@ async def main():
     chdir(path)
 
     async with ClientSession(connector=TCPConnector(ssl=False)) as session:
-        oracle_key_0 = 'a5bc3d9296bda1e52f96bf0a65238998877dbddb0703bd37ef1f18a6ffce458a'
+        oracle_key_0 = '6d187b0f2e66d74410e92e2dc92a5141a55c241646ce87acbcad4ab413170f9b'
 
         clean('common')
         clean("faucet")
@@ -618,7 +618,7 @@ async def create_xrd_pool(
                     )                    
                     18u8
                     Address("{token}")
-                    Enum<0u8>()
+                    Enum<2u8>()
                     Decimal("0.85")
                     Decimal("0.87")
                     Decimal("0.02")

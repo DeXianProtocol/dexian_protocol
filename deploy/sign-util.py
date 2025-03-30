@@ -1,11 +1,13 @@
 import sys
 import os
 from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives import serialization
 
 
-def sign_message(msg: str, priv_hex: str):
-    priv_key = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_hex))
-    # priv_key.public_key().public_bytes()
+def sign_message(msg: str, priv_key_hex: str):
+    priv_key = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_key_hex))
+    # pub_key = priv_key.public_key().public_bytes(encoding=serialization.Encoding.Raw,format=serialization.PublicFormat.Raw)
+    # pub_key.hex()
     data = bytes(msg.encode("utf-8"))
     signature = priv_key.sign(data).hex()
     #print("{} = {}, {}".format(msg, signature, priv_key.public_key().verify(bytes.fromhex(signature), data)))

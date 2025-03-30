@@ -18,11 +18,11 @@
     "STAKING_POOL": "component_tdx_2_1cpepyld0cmu2dfnxr40ydkpj97g4n79fw5fhmdhtsfguuyx8wphshc",
     "EARNING_COMPONENT": "component_tdx_2_1crvjp40ust75u2ezqzuredx2a5uua5umgnyl47qtas42l22e697qeu",
     "DSE_RESOURCE": "resource_tdx_2_1thxzt9qwdq5qwlm7zpl3yc0vlvu7zjquvwqea3ycpkxyz32tp0xwd7",
-    "CDP_COMPONENT": "component_tdx_2_1cql080t7j0rjp3yr7cq6umaghe2je3dkmcy29alah83zfq5yy2dujj",
-    "USDC_POOL": "component_tdx_2_1czcxl2djj0ahu3m7vkl2jg3wz22rjc6d76jucvlukl5wmwceytj57m",
-    "DX_USDC": "resource_tdx_2_1thrh88pgykaqqmrv5lae6gxpzhpm78n06qnwpp6krlvtmwvrh97k4x",
-    "USDT_POOL": "component_tdx_2_1cr0atrr5r43u4cxcafyatgpr23d7z0x3kplrcnp3xjv9arqs9sd2ww",
-    "DX_USDT": "resource_tdx_2_1thtethjyqdns4dtrp85zmxa8h0n8uvl3p86fx8ywq2s64cdc7yrlgr",
-    "XRD_POOL": "component_tdx_2_1cr00cat353m0menrzwvx2tqy20e7gu2f3aksguaxq0haulxut43lc8",
-    "DX_XRD": "resource_tdx_2_1th4gdlwc38egrdwahla2tje84gaxyfzsz4t0ey73x765we6qayzvgx"
+    "CDP_COMPONENT": "component_tdx_2_1cqaasntjzvtq5xm7va686pu8mc32u2mrsk5myayqajfe74lapydwk4",
+    "USDC_POOL": "component_tdx_2_1crr0puar2fyf7gy6p6ehsr6dhv4grm3k84rfvqhhc2ut65cq9w85yu",
+    "DX_USDC": "resource_tdx_2_1t5asxs20sv6kjxh3ukm6rgvx37er58dfnfh4a54d85g0jlfltax55p",
+    "USDT_POOL": "component_tdx_2_1cphfc8gwdv56esjc0pthpuy4leqvxd6pla9fevywpvf683zvdymy8y",
+    "DX_USDT": "resource_tdx_2_1t5dsa3vcm20l2ed474yf3wr925lw3xs7ku5skcayrsd2s0rxvzev0g",
+    "XRD_POOL": "component_tdx_2_1cpyahrg799s98dawwdtwsaaradz6m9cwjglydan40zq9hvhgjntf03",
+    "DX_XRD": "resource_tdx_2_1t5nxqt47xze00nqkewz6cln4ysg0vtcy42k5fsg5p6uv3ud3zweruc"
 }
