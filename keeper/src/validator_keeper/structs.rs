@@ -5,7 +5,7 @@ use scrypto::prelude::*;
 pub struct StakeData{
     pub last_lsu: Decimal,
     pub last_staked: Decimal,
-    pub last_stake_epoch: u64
+    pub epoch_at: u64
 }
 
 

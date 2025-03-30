@@ -119,28 +119,29 @@ mod oracle_price{
             );
             
             info!("price message: {}, signature:{}", message.clone(), signature.clone());
-            if utils::verify_ed25519(&message, &self.pk_str, &signature){
-                if self.last_validation_epoch == epoch_at{
-                    assert!((self.last_validation_timestamp as i128 - timestamp as i128) < self.max_diff as i128, "Price information has become too stale.");
-                    if self.last_validation_timestamp < timestamp{
-                        // keep latest timestamp
-                        self.last_validation_timestamp = timestamp;
-                    }
-                }
-                if self.last_validation_epoch < epoch_at {
-                    //keep latest epoch
-                    self.last_validation_epoch = epoch_at;
+            assert!(utils::verify_ed25519(&message, &self.pk_str, &signature), "Incorrect information on price signature. {}, {}", message, signature);
+            
+            if self.last_validation_epoch == epoch_at{
+                assert!((self.last_validation_timestamp as i128 - timestamp as i128) < self.max_diff as i128, "Price information has become too stale.");
+                if self.last_validation_timestamp < timestamp{
+                    // keep latest timestamp
                     self.last_validation_timestamp = timestamp;
                 }
-                
-                if let Ok(xrd_price_in_res) = Decimal::from_str(&xrd_price_in_quote){
-                    info!("price verify passed. :)");
-                    // XRD/USDT --> USDT/XRD
-                    return Decimal::ONE.checked_div(xrd_price_in_res).unwrap();
-                }
+            }
+            if self.last_validation_epoch < epoch_at {
+                //keep latest epoch
+                self.last_validation_epoch = epoch_at;
+                self.last_validation_timestamp = timestamp;
             }
             
-            Decimal::ZERO 
+            // XRD/USDT --> USDT/XRD
+            Decimal::ONE.checked_div(Decimal::from_str(&xrd_price_in_quote).expect("incorrect price string.")).unwrap()
+            // if let Ok(xrd_price_in_res) = Decimal::from_str(){
+            //     info!("price verify passed. :)");
+            //     
+            //     return Decimal::ONE.checked_div(xrd_price_in_res).unwrap();
+            // }
+            // Decimal::ZERO 
         }
     }
 }

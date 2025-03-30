@@ -59,10 +59,12 @@ async def main():
         # await supply(gateway, config_data, account3, pub3, priv3, usdt, "100")
 
         dx_xrd = config_data['DX_XRD']
+        dx_usdc = config_data['DX_USDC']
         validator = getenv("validator")
         amount = "2000"
-        await borrow(gateway, session, network_config['network_name'], config_data, account1, pub1, priv1, dx_xrd, "3000", usdc, "20", "usdc", None)
-        await borrow(gateway, session, network_config['network_name'], config_data, account2, pub2, priv2, dx_xrd, "3000", usdt, "20", "usdt", None)
+        # await borrow(gateway, session, network_config['network_name'], config_data, account1, pub1, priv1, dx_xrd, "3000", usdc, "10", "usdc", None)
+        # await borrow(gateway, session, network_config['network_name'], config_data, account2, pub2, priv2, dx_xrd, "3000", usdt, "10", "usdt", None)
+        await borrow(gateway, session, network_config['network_name'], config_data, account3, pub3, priv3, dx_usdc, "50", xrd, "3000", "usdc", None)
         # await dse_join(gateway, account3, pub3, priv3, config_data, validator, xrd, amount)
         # await dse_redeem(gateway, account3, pub3, priv3, config_data, validator, dse, "100", False)
         # await dse_redeem(gateway, account3, pub3, priv3, config_data, validator, dse, "200", True)
@@ -122,7 +124,8 @@ async def get_price_signature(session: ClientSession, network: str, base: str, q
             data['data']['price'],
             data['data']['symbol'].split("/")[1],
             data['data']['timestamp'],
-            data['data']['signature']
+            data['data']['signature'],
+            data['data']['epoch_at']
         )
 
 async def dse_join(gateway: Gateway, account: ret.Address, public_key: ret.PublicKey, private_key: ret.PrivateKey, config_data: Tuple[str, str], validator: str, xrd_addr_str: str,  amount: str):
@@ -173,11 +176,13 @@ async def borrow(gateway: Gateway, session: ClientSession, network_name: str, co
                 dx_token: str, dx_amount: str, borrow_token:str, borrow_amount:str,
                 quote:str, _quote: str):
     cdp_mgr = config_data['CDP_COMPONENT']
-    (price1, quote1, timestamp1, signature1) = await get_price_signature(session, network_name, "xrd", quote)
+    (price1, quote1, timestamp1, signature1, epoch1) = await get_price_signature(session, network_name, "xrd", quote)
     if not _quote:
-        (price2, quote2, timestamp2, signature2) = (None, None, None, None)
+        (price2, quote2, timestamp2, signature2, epoch2) = (None, None, None, None, '')
     else:
-        (price2, quote2, timestamp2, signature2) = await get_price_signature(session, network_name, "xrd", _quote)
+        (price2, quote2, timestamp2, signature2, epoch2) = await get_price_signature(session, network_name, "xrd", _quote)
+    print("get_price_signature", price1, quote1, timestamp1, signature1, epoch1)
+    print("get_price_signature2", price2, quote2, timestamp2, signature2, epoch2)
     manifest = f'''
         CALL_METHOD
             Address("{account.as_str()}")

@@ -69,7 +69,7 @@ scrypto build
 result=$(resim publish ".")
 export pkg=$(echo $result | awk -F ": " '{print $2}')
 export ORACLE_PACKAGE=$pkg
-export pub_key_str="a5bc3d9296bda1e52f96bf0a65238998877dbddb0703bd37ef1f18a6ffce458a"
+export pub_key_str="6d187b0f2e66d74410e92e2dc92a5141a55c241646ce87acbcad4ab413170f9b"
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_oracle.rtm)
 export oracle=$(echo $result | grep "Component: "| awk -F "Component: " '{print $2}' | awk -F " " '{print $1}')
 export ORACLE_COMPONENT=$oracle

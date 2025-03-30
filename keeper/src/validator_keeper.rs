@@ -78,7 +78,7 @@ mod validator_keeper{
 
         pub fn fill_validator_staking(&mut self, validator_addr: ComponentAddress, stake_data_vec: Vec<StakeData>){
             self.validator_map.entry(validator_addr).or_insert(stake_data_vec.clone());
-            info!("{}: {},{},{}", Runtime::bech32_encode_address(validator_addr), stake_data_vec[0].last_lsu, stake_data_vec[0].last_staked, stake_data_vec[0].last_stake_epoch);
+            info!("{}: {},{},{}", Runtime::bech32_encode_address(validator_addr), stake_data_vec[0].last_lsu, stake_data_vec[0].last_staked, stake_data_vec[0].epoch_at);
         }
 
         pub fn insert_validator_staking(&mut self, validator_addr: ComponentAddress, index:usize,  stake_data: StakeData){
@@ -102,7 +102,7 @@ mod validator_keeper{
                 let last_lsu = validator.total_stake_unit_supply();
                 let last_staked = validator.total_stake_xrd_amount();
                 let latest = vec.first_mut().unwrap();
-                let last_week_index = Self::get_week_index(latest.last_stake_epoch);
+                let last_week_index = Self::get_week_index(latest.epoch_at);
                 if current_week_index > last_week_index {
                     vec.insert(0, Self::new_stake_data(last_lsu, last_staked, current_epoch));
                     while vec.capacity() > RESERVE_WEEKS {
@@ -112,7 +112,7 @@ mod validator_keeper{
                 else{
                     latest.last_lsu = last_lsu;
                     latest.last_staked = last_staked;
-                    latest.last_stake_epoch = current_epoch;
+                    latest.epoch_at = current_epoch;
                 }
                 last_staked
             })
@@ -137,7 +137,7 @@ mod validator_keeper{
             let last_staked = validator.total_stake_xrd_amount();
             self.validator_map.entry(validator_addr.clone()).and_modify(|vec|{
                 let latest = vec.first_mut().unwrap();
-                let last_index = Self::get_week_index(latest.last_stake_epoch);
+                let last_index = Self::get_week_index(latest.epoch_at);
                 if current_week_index > last_index {
                     vec.insert(0, Self::new_stake_data(last_lsu, last_staked, current_epoch));
                     while vec.capacity() > RESERVE_WEEKS {
@@ -147,7 +147,7 @@ mod validator_keeper{
                 else{
                     latest.last_lsu = last_lsu;
                     latest.last_staked = last_staked;
-                    latest.last_stake_epoch = current_epoch;
+                    latest.epoch_at = current_epoch;
                 } 
 
             }).or_insert(Vec::from([Self::new_stake_data(last_lsu, last_staked, current_epoch)]));
@@ -155,9 +155,9 @@ mod validator_keeper{
             last_staked
         }
 
-        fn new_stake_data(last_lsu: Decimal, last_staked: Decimal, last_stake_epoch: u64) -> StakeData{
+        fn new_stake_data(last_lsu: Decimal, last_staked: Decimal, epoch_at: u64) -> StakeData{
             StakeData{
-                last_stake_epoch,
+                epoch_at,
                 last_lsu,
                 last_staked
             }
@@ -169,22 +169,21 @@ mod validator_keeper{
             // ().to_usize()
             let elapsed_epoch = epoch_at - BABYLON_START_EPOCH;
             let week_index = elapsed_epoch / A_WEEK_EPOCHS;
-            let ret =  if week_index * A_WEEK_EPOCHS < elapsed_epoch{
+            if week_index * A_WEEK_EPOCHS < elapsed_epoch{
                 (week_index + 1) as usize
             }
             else{
                 week_index as usize
-            };
-            ret
+            }
         }
 
         pub fn get_active_set_apy(&self) -> Decimal {
-            let current_epoch = Runtime::current_epoch().number();
-            let current_week_index = Self::get_week_index(current_epoch);
-        
             let (sum, count) = self.validator_map.iter()
                 .filter_map(|(validator_addr, vec)| {
-                    self.get_validator_apy(validator_addr, vec, current_week_index)
+                    let validator: Global<Validator> = Global::from(validator_addr.clone());
+                    let last_staked = validator.total_stake_xrd_amount();
+                    let last_lsu = validator.total_stake_unit_supply();
+                    self.get_validator_apy(validator_addr, vec, last_staked, last_lsu)
                 })
                 .fold((Decimal::ZERO, Decimal::ZERO), |(sum, count), apy| {
                     (sum + apy, count + Decimal::ONE)
@@ -198,38 +197,34 @@ mod validator_keeper{
         }
         
 
-        fn get_validator_apy(&self, _validator_addr: &ComponentAddress, vec: &Vec<StakeData>, current_week_index: usize) -> Option<Decimal> {
-            let latest = vec.first()?;
-            let latest_week_index = Self::get_week_index(latest.last_stake_epoch);
+        fn get_validator_apy(&self, _validator_addr: &ComponentAddress, vec: &Vec<StakeData>, last_staked: Decimal, last_lsu: Decimal) -> Option<Decimal> {
+            // let latest = vec.first()?;
+            // let latest_week_index = Self::get_week_index(latest.epoch_at);
         
-            // The last entry must be within the last week (inclusive).
-            if latest_week_index < current_week_index -1 {
-                info!("latest_week_index:{}/{}, current_week_index:{}", latest.last_stake_epoch, latest_week_index, current_week_index);
-                return None;
-            }
-        
+            // // The last entry must be within the last week (inclusive).
+            // if latest_week_index < current_week_index -1 {
+            //     info!("latest_week_index:{}/{}, current_week_index:{}", latest.epoch_at, latest_week_index, current_week_index);
+            //     return None;
+            // }
             if let Some(previous) = vec.get(1) {
-                let previous_week_index = Self::get_week_index(previous.last_stake_epoch);
-        
-                if previous_week_index == latest_week_index - 1 {
-                    let latest_index = latest.last_staked.checked_div(latest.last_lsu)?;
-                    let previous_index = previous.last_staked.checked_div(previous.last_lsu)?;
-                    let delta_index = latest_index.checked_sub(previous_index)?;
-                    let delta_epoch = Decimal::from(latest.last_stake_epoch - previous.last_stake_epoch);
-                    info!(
-                        "latest_index:{}/{}, previous_index:{}/{}, delta_index:{}, delta_epoch:{}/{}",
-                        latest.last_staked, latest.last_lsu,
-                        previous.last_staked, previous.last_lsu,
-                        delta_index,
-                        latest.last_stake_epoch, previous.last_stake_epoch
-                    );
-                    return Some(
-                        (delta_index).checked_mul(Decimal::from(EPOCH_OF_YEAR)).unwrap()
-                        .checked_div(delta_epoch).unwrap()
-                    );
-                }
+                let current_epoch = Runtime::current_epoch().number();
+                let current_lsu_index = last_staked.checked_div(last_lsu)?;
+                let previous_index = previous.last_staked.checked_div(previous.last_lsu)?;
+                let delta_index = current_lsu_index.checked_sub(previous_index)?;
+                let delta_epoch = Decimal::from(current_epoch - previous.epoch_at);
+
+                info!(
+                    "latest_index:{}/{}, previous_index:{}/{}, delta_index:{}, delta_epoch:{}/{}",
+                    last_staked, last_lsu,
+                    previous.last_staked, previous.last_lsu,
+                    delta_index,
+                    current_epoch, previous.epoch_at
+                );
+                return Some(
+                    (delta_index).checked_mul(Decimal::from(EPOCH_OF_YEAR)).unwrap()
+                    .checked_div(delta_epoch).unwrap()
+                );
             }
-        
             None
         }
 

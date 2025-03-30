@@ -13,6 +13,6 @@ pub const BABYLON_START_EPOCH: u64 = 0; // Default value if no feature is enable
 
 pub const EPOCH_OF_YEAR: u64 = 105120; // 5*24*7*52
 pub const A_WEEK_EPOCHS: u64 = 2016; //60/5*24*7;
-pub const RESERVE_WEEKS: usize = 52;
+pub const RESERVE_WEEKS: usize = 4;
 pub const TO_INFINITY: WithdrawStrategy = WithdrawStrategy::Rounded(RoundingMode::ToPositiveInfinity);
 pub const TO_ZERO: WithdrawStrategy = WithdrawStrategy::Rounded(RoundingMode::ToZero);
