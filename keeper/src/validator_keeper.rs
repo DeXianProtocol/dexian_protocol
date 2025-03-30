@@ -6,7 +6,6 @@ pub use self::structs::*;
 
 #[blueprint]
 #[types(StakeData)]
-//#[events(DebugGetApy, DebugGetApy2)]
 mod validator_keeper{
     const AUTHORITY_RESOURCE: ResourceAddress = _AUTHORITY_RESOURCE;
     const BASE_AUTHORITY_RESOURCE: ResourceAddress = _BASE_AUTHORITY_RESOURCE;

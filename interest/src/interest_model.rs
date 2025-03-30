@@ -96,7 +96,7 @@ mod def_interest_model{
                     let validator_apy = Global::<ValidatorKeeper>::from(KEEPER_COMPONENT).get_active_set_apy();
                     info!(
                         "borrow_ratio: {}, stable_ratio:{}, bond_ratio:{}, apy:{}, validator_apy:{}", 
-                        borrow_ratio, _stable_ratio, _bond_ratio, apy, validator_apy
+                        borrow_ratio, _stable_ratio, _bond_ratio, interest_rate, validator_apy
                     );
                     (interest_rate, if interest_rate > validator_apy {interest_rate} else {validator_apy})
                 }
