@@ -31,5 +31,4 @@ CALL_METHOD
     Decimal("0.02")
     Decimal("0.10")
     Decimal("0.001")
-    None
 ;

@@ -119,11 +119,15 @@ mod staking_pool {
             let stake_value = stake_bucket.amount();
             assert!(unstake_value.checked_sub(stake_value).unwrap().checked_abs().unwrap() < dec!("1"), "diff exceed 1");
             
+            let dust = dec!("0.000001");
             let current_lsu_amount = lsu_vault.amount();
             let diff = current_lsu_amount.checked_sub(lsu_amount).unwrap().checked_abs().unwrap();
-            let unstake_bucket =  if diff < dec!("0.000001") {lsu_vault.take_all()} else {lsu_vault.take(lsu_amount)};
+            let unstake_bucket =  if diff <= dust {lsu_vault.take_all()} else {lsu_vault.take(lsu_amount)};
             let unstake_lsu_amount = unstake_bucket.amount();
             let claim_nft = validator.unstake(unstake_bucket);
+            if diff <= dust{
+                self.lsu_map.remove(&unstake_validator);
+            }
 
             let mut stake_validator: Global<Validator> = Global::from(stake_validator_addr.clone());
             let lsu_bucket = stake_validator.stake(stake_bucket);

@@ -18,7 +18,9 @@ CALL_METHOD
     Address("${earning}")
     "redeem"
     Address("${cdp_mgr}")
-    Address("${validator}")
+    Array<Address>(
+      Address("${validator}")
+    )
     Bucket("bucket1")
     ${faster}
 ;
