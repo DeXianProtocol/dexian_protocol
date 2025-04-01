@@ -13,7 +13,6 @@ pub struct FixedEpochBond {
     pub global_id_list: List<NonFungibleGlobalId>
 }
 
-
 #[blueprint]
 #[types(
     ListIndex,
@@ -62,15 +61,11 @@ mod lend_pool {
             // readonly
             get_current_index => PUBLIC;
             get_interest_rate => PUBLIC;
-            get_variable_share_quantity => PUBLIC;
             get_deposit_share_quantity => PUBLIC;
             get_stable_interest => PUBLIC;
-            get_variable_interest => PUBLIC;
-            get_available => PUBLIC;
-            get_last_update => PUBLIC;
             get_redemption_value => PUBLIC;
-            get_underlying_value => PUBLIC;
             get_flashloan_fee_ratio => PUBLIC;
+            get_variable_interest => PUBLIC;
         }
     }
     
@@ -189,13 +184,13 @@ mod lend_pool {
 
         pub fn withdraw_insurance(&mut self, amount: Decimal) -> FungibleBucket{
             assert_amount(amount, self.insurance_balance);
-            self.vault.take_advanced(amount, WithdrawStrategy::Rounded(RoundingMode::ToZero))
+            self.vault.take_advanced(amount, TO_ZERO)
         }
 
-        pub fn get_underlying_value(&self) -> Decimal{
-            let (supply_index, _) = self.get_current_index();
-            self.deposit_share_res_mgr.total_supply().unwrap().checked_mul(supply_index).unwrap()
-        }
+        // pub fn get_underlying_value(&self) -> Decimal{
+        //     let (supply_index, _) = self.get_current_index();
+        //     self.deposit_share_res_mgr.total_supply().unwrap().checked_mul(supply_index).unwrap()
+        // }
 
         pub fn add_liquity(&mut self, bucket: FungibleBucket) -> FungibleBucket{
             assert_resource(&bucket.resource_address(), &self.underlying_token);
@@ -372,7 +367,7 @@ mod lend_pool {
 
         pub fn borrow_fixed_term(&mut self, amount: Decimal) -> FungibleBucket {
             assert!(self.vault.amount() >= amount, "Insufficient vault amount!");
-            self.vault.take_advanced(amount, WithdrawStrategy::Rounded(RoundingMode::ToZero))
+            self.vault.take_advanced(amount, TO_ZERO)
         }
 
         pub fn repay_fixed_term(&mut self, mut repay_bucket: FungibleBucket, amount: Decimal, fee: Decimal) -> FungibleBucket{
@@ -621,13 +616,6 @@ mod lend_pool {
             let (supply_index, _) = self.get_current_index();
             amount_of_pool_units.checked_mul(supply_index).unwrap()
         }
-        pub fn get_available(&self) -> Decimal{
-            self.vault.amount()
-        }
-
-        pub fn get_last_update(&self) -> u64{
-            self.last_update
-        }
 
         pub fn get_flashloan_fee_ratio(&self) -> Decimal{
             self.flashloan_fee_ratio
@@ -648,7 +636,7 @@ mod lend_pool {
             borrow_amount.checked_mul(borrow_index).unwrap()
         }
 
-        pub fn get_variable_share_quantity(&self) -> Decimal{
+        fn get_variable_share_quantity(&self) -> Decimal{
             self.variable_loan_share_quantity
         }
     }   

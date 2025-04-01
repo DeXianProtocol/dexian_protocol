@@ -1,22 +1,23 @@
 use scrypto::prelude::*;
 use common::utils::*;
+use common::TO_ZERO;
 
+use std::cmp::min;
 
 #[blueprint]
-#[types(
-    FungibleVault
-)]
-#[events(JoinEvent)]
+#[types(FungibleVault)]
+#[events(JoinEvent, RebalanceEvent, DseUnstakeEvent)]
 mod staking_pool {
-
     enable_method_auth!{
         roles{
             admin => updatable_by: [];
-            operator => updatable_by: [];
+            protocol_caller => updatable_by: [];
         },
         methods {
-            contribute => restrict_to:[operator, OWNER];
-            redeem => restrict_to:[operator, OWNER];
+            contribute => restrict_to:[protocol_caller];
+            redeem => restrict_to:[protocol_caller];
+
+            rebalance => restrict_to:[admin];
 
             get_redemption_value => PUBLIC;
             get_underlying_token => PUBLIC;
@@ -35,7 +36,7 @@ mod staking_pool {
             owner_role: OwnerRole,
             underlying_token: ResourceAddress,
             admin_rule: AccessRule,
-            op_rule: AccessRule
+            protocol_rule: AccessRule
         ) -> (Global<StakingResourePool>, ResourceAddress) {
             let (address_reservation, address) =
                 Runtime::allocate_component_address(StakingResourePool::blueprint_id());
@@ -68,14 +69,16 @@ mod staking_pool {
             }.instantiate()
             .prepare_to_globalize(owner_role)
             .with_address(address_reservation)
-            // .metadata(metadata! {
-            //     // "pool_resources" => vec![underlying_token, staking_unit_token], locked;
-            //     "pool_unit" => staking_unit_token, locked;
-            //     }
-            // )
+            .metadata(metadata!(init{
+                "pool_unit" => staking_unit_token, locked;
+                "name" => "DeXian Staking Earning ", locked;
+                "icon_url" => "https://dexian.io/images/dse.png", updatable;
+                "info_url" => "https://dexian.io", updatable;
+                })
+            )
             .roles(roles!{
                 admin => admin_rule.clone();
-                operator => op_rule.clone();
+                protocol_caller => protocol_rule.clone();
             })
             .globalize();
             
@@ -91,51 +94,89 @@ mod staking_pool {
 
             let lsu_amount = lsu.amount();
             let join_amount = validator.get_redemption_value(lsu_amount);
-            let unit_amount = floor_by_resource(self.staking_unit_res_mgr.address(), join_amount.checked_div(value_per_unit).unwrap());
-            let unit_bucket = self.staking_unit_res_mgr.mint(unit_amount);
+            let dse_amount = floor_by_resource(self.staking_unit_res_mgr.address(), join_amount.checked_div(value_per_unit).unwrap());
+            let dse_bucket = self.staking_unit_res_mgr.mint(dse_amount);
 
             let lsu_index = amount / lsu_amount;
-            let _last_lsu = if self.lsu_map.get(&validator_addr).is_some(){
-                let v = self.lsu_map.get_mut(&validator_addr).unwrap();
-                v.put(lsu);
-                v.amount()
-            }
-            else{
-                self.lsu_map.insert(validator_addr.clone(), FungibleVault::with_bucket(lsu));
-                lsu_amount
-            };
+            self.put_lsu(&validator_addr, lsu);
             Runtime::emit_event(JoinEvent{
                 amount: join_amount,
                 validator: validator_addr,
                 dse_index: value_per_unit,
-                dse_amount: unit_bucket.amount(),
+                dse_amount: dse_bucket.amount(),
                 lsu_index,
                 lsu_amount
             });
 
-            unit_bucket
+            dse_bucket
         }
 
-        pub fn redeem(&mut self, validator_addr: ComponentAddress, bucket: FungibleBucket) -> NonFungibleBucket{
+        pub fn rebalance(&mut self, unstake_validator: ComponentAddress, lsu_amount: Decimal, stake_validator_addr: ComponentAddress, stake_bucket: FungibleBucket) -> NonFungibleBucket{
+            assert!(self.lsu_map.contains_key(&unstake_validator), "the validator address not exists");
+            let lsu_vault = self.lsu_map.get_mut(&unstake_validator).unwrap();
+            let mut validator: Global<Validator> = Global::from(unstake_validator);
+            let unstake_value = validator.get_redemption_value(lsu_amount);
+            let stake_value = stake_bucket.amount();
+            assert!(unstake_value.checked_sub(stake_value).unwrap().checked_abs().unwrap() < dec!("1"), "diff exceed 1");
+            
+            let current_lsu_amount = lsu_vault.amount();
+            let diff = current_lsu_amount.checked_sub(lsu_amount).unwrap().checked_abs().unwrap();
+            let unstake_bucket =  if diff < dec!("0.000001") {lsu_vault.take_all()} else {lsu_vault.take(lsu_amount)};
+            let unstake_lsu_amount = unstake_bucket.amount();
+            let claim_nft = validator.unstake(unstake_bucket);
+
+            let mut stake_validator: Global<Validator> = Global::from(stake_validator_addr.clone());
+            let lsu_bucket = stake_validator.stake(stake_bucket);
+            let stake_lsu_amount = lsu_bucket.amount();
+            self.put_lsu(&stake_validator_addr, lsu_bucket);
+            Runtime::emit_event(RebalanceEvent{
+                stake_validator: stake_validator_addr,
+                stake_amount: stake_value,
+                stake_lsu_amount,
+                unstake_value,
+                unstake_lsu_amount,
+                unstake_validator,
+            });
+            
+            claim_nft
+
+        }
+
+        pub fn redeem(&mut self, validators: Vec<ComponentAddress>, bucket: FungibleBucket) -> Vec<NonFungibleBucket>{
             assert_resource(&bucket.resource_address(), &self.staking_unit_res_mgr.address());
-            assert!(self.lsu_map.get(&validator_addr).is_some(), "the validator address not exists");
+            
+            let mut nfts: Vec<NonFungibleBucket> = Vec::new();
             let (_, _, value_per_share) = self.get_values();
             let amount = bucket.amount();
-            let redeem_value = amount.checked_mul(value_per_share).unwrap();
+            let mut redeem_value = amount.checked_mul(value_per_share).unwrap();
             
-            let lsu = self.lsu_map.get_mut(&validator_addr).unwrap();
-            let mut validator: Global<Validator> = Global::from(validator_addr);
-            let lsu_amount = lsu.amount();
-            let lsu_value = validator.get_redemption_value(lsu_amount);
+            for validator_addr in validators{
+                assert!(self.lsu_map.contains_key(&validator_addr), "the validator address not exists");
+                
+                let lsu_vault = self.lsu_map.get_mut(&validator_addr).unwrap();
+                let lsu_amount = lsu_vault.amount();
+                let mut validator: Global<Validator> = Global::from(validator_addr.clone());
+                let lsu_value = validator.get_redemption_value(lsu_amount);
+                let lsu_index = lsu_value.checked_div(lsu_amount).unwrap();
+                let unstake_value = min(redeem_value, lsu_value);
+                let unstake_lsu_bucket = if unstake_value == lsu_value {lsu_vault.take_all()} else{lsu_vault.take_advanced(unstake_value.checked_div(lsu_index).unwrap(), TO_ZERO)};
+                let unstake_lsu_amount = unstake_lsu_bucket.amount();
+                Runtime::emit_event(DseUnstakeEvent{
+                    validator: validator_addr,
+                    unstake_lsu: unstake_lsu_amount,
+                    unstake_value
+                });
+
+                nfts.push(validator.unstake(unstake_lsu_bucket));
+                redeem_value = redeem_value.checked_sub(unstake_value).unwrap();
+                if redeem_value <= Decimal::ZERO {
+                    break;
+                }
+            }
             
-            assert!(redeem_value <= lsu_value, "the target value {} less than expect {}!", lsu_value, redeem_value);
-            let lsu_index = lsu_value.checked_div(lsu_amount).unwrap();
-            let unstake_lsu_bucket = lsu.take_advanced(redeem_value.checked_div(lsu_index).unwrap(), WithdrawStrategy::Rounded(RoundingMode::ToZero));
-            // let unstake_amount = unstake_lsu_bucket.amount();
-            let claim_nft = validator.unstake(unstake_lsu_bucket);
+            assert!(redeem_value == Decimal::ZERO, "Unredeemed balance remaining!");
             self.staking_unit_res_mgr.burn(bucket);
-            claim_nft
-            
+            nfts
         }
 
         pub fn get_redemption_value(&self, amount_of_pool_units: Decimal) -> Decimal{
@@ -145,6 +186,19 @@ mod staking_pool {
 
         pub fn get_underlying_token(&self) -> ResourceAddress{
             self.underlying_token
+        }
+
+        fn put_lsu(&mut self, validator_addr: &ComponentAddress, lsu_bucket: FungibleBucket) -> Decimal{
+            if self.lsu_map.get(validator_addr).is_some(){
+                let v = self.lsu_map.get_mut(validator_addr).unwrap();
+                v.put(lsu_bucket);
+                v.amount()
+            }
+            else{
+                let lsu_amount = lsu_bucket.amount();
+                self.lsu_map.insert(validator_addr.clone(), FungibleVault::with_bucket(lsu_bucket));
+                lsu_amount
+            }
         }
 
         fn get_values(&self) -> (Decimal, Decimal, Decimal){
@@ -180,4 +234,22 @@ pub struct JoinEvent {
     pub lsu_amount: Decimal,
     pub dse_index: Decimal,
     pub dse_amount: Decimal,
+}
+
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct RebalanceEvent {
+    pub stake_validator: ComponentAddress,
+    pub stake_amount: Decimal,
+    pub stake_lsu_amount: Decimal,
+    pub unstake_validator: ComponentAddress,
+    pub unstake_lsu_amount: Decimal,
+    pub unstake_value: Decimal,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct DseUnstakeEvent {
+    pub validator: ComponentAddress,
+    pub unstake_lsu: Decimal,
+    pub unstake_value: Decimal
 }

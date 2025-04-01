@@ -75,24 +75,25 @@ mod cdp_mgr{
         instantiate => rule!(require(AUTHORITY_RESOURCE));
     }
     
-    enable_method_auth!{
+    enable_method_auth! {
         roles{
             authority => updatable_by:[]; 
             admin => updatable_by: [authority];
             operator => updatable_by: [authority];
+            protocol_caller => updatable_by:[];
         },
         methods{
             new_pool => restrict_to:[admin];
-            withdraw_insurance => restrict_to: [operator, OWNER];
-            set_close_factor =>restrict_to: [operator, OWNER];
+            withdraw_insurance => restrict_to: [operator];
+            set_close_factor =>restrict_to: [operator];
 
-            staking_borrow => PUBLIC; //restrict_to: [protocol_caller, OWNER];
+            staking_borrow => restrict_to: [protocol_caller];
 
             borrow_variable => PUBLIC;
-            borrow_stable => PUBLIC; //restrict_to: [protocol_caller, OWNER];
-            extend_borrow => PUBLIC; //restrict_to: [protocol_caller, OWNER];
-            withdraw_collateral => PUBLIC; //restrict_to:[protocol_caller, OWNER];
-            liquidation => PUBLIC; //restrict_to:[protocol_caller, OWNER];
+            borrow_stable => PUBLIC;
+            extend_borrow => PUBLIC;
+            withdraw_collateral => PUBLIC;
+            liquidation => PUBLIC;
 
             borrow_flashloan => PUBLIC;
             repay_flashloan => PUBLIC;
@@ -129,7 +130,8 @@ mod cdp_mgr{
 
         /// Collateral Debt Position Manager
         pub fn instantiate(
-            owner_role: OwnerRole
+            owner_role: OwnerRole,
+            earning_addr: ComponentAddress
         )->Global<CollateralDebtManager> {
             let admin_rule = rule!(require(AUTHORITY_RESOURCE));
             let op_rule = rule!(require(BASE_AUTHORITY_RESOURCE));
@@ -194,6 +196,8 @@ mod cdp_mgr{
                 authority => rule!(require(AUTHORITY_RESOURCE));
                 admin => admin_rule.clone();
                 operator => op_rule.clone();
+                protocol_caller => rule!(require(global_caller(earning_addr)));
+
             })
             .globalize();
             
@@ -210,17 +214,8 @@ mod cdp_mgr{
             liquidation_bonus: Decimal,
             insurance_ratio: Decimal,
             flashloan_fee_ratio: Decimal,
-            protocol_caller: Option<ComponentAddress>
         ) -> ResourceAddress{
-            let pool_mgr_rule = if protocol_caller.is_some(){
-                rule!(
-                    require(global_caller(self.self_cmp_addr)) ||
-                    require(global_caller(protocol_caller.unwrap()))
-                )
-            }
-            else{
-                rule!(require(global_caller(self.self_cmp_addr)))
-            };
+            let pool_mgr_rule = rule!(require(global_caller(self.self_cmp_addr)));
             let (lend_res_pool, dx_token_addr) = LendResourcePool::instantiate(
                 owner_role,
                 share_divisibility,
@@ -245,12 +240,14 @@ mod cdp_mgr{
         }
 
         pub fn staking_borrow(&mut self, underlying_token_addr: ResourceAddress, borrow_amount: Decimal, 
-            claim_nft: NonFungibleBucket, interest: Decimal
+            claim_nfts: Vec<NonFungibleBucket>, interests: Vec<Decimal>
         ) -> FungibleBucket{
-            assert!(self.pools.get(&underlying_token_addr).is_some(), "There is no pool of funds corresponding to the assets!");
+            assert!(self.pools.contains_key(&underlying_token_addr), "There is no pool of funds corresponding to the assets!");
             let lending_pool = self.pools.get_mut(&underlying_token_addr).unwrap();
             let borrow_bucket = lending_pool.borrow_fixed_term(borrow_amount);
-            lending_pool.add_fixed_term(claim_nft, interest);
+            for (claim_nft, interest) in claim_nfts.into_iter().zip(interests.into_iter()) {
+                lending_pool.add_fixed_term(claim_nft, interest);
+            }
             borrow_bucket
         }
 
