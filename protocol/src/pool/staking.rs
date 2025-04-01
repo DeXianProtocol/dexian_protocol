@@ -142,7 +142,7 @@ mod staking_pool {
 
         }
 
-        pub fn redeem(&mut self, validators: Vec<ComponentAddress>, bucket: FungibleBucket) -> Vec<NonFungibleBucket>{
+        pub fn redeem(&mut self, validators: Vec<ComponentAddress>, bucket: FungibleBucket) -> (Vec<NonFungibleBucket>, Decimal){
             assert_resource(&bucket.resource_address(), &self.staking_unit_res_mgr.address());
             
             let mut nfts: Vec<NonFungibleBucket> = Vec::new();
@@ -176,7 +176,7 @@ mod staking_pool {
             
             assert!(redeem_value == Decimal::ZERO, "Unredeemed balance remaining!");
             self.staking_unit_res_mgr.burn(bucket);
-            nfts
+            (nfts, amount.checked_mul(value_per_share).unwrap())
         }
 
         pub fn get_redemption_value(&self, amount_of_pool_units: Decimal) -> Decimal{
