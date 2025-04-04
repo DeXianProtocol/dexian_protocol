@@ -86,6 +86,8 @@ mod staking_pool {
         }
 
         pub fn contribute(&mut self, bucket: FungibleBucket, validator_addr: ComponentAddress) -> FungibleBucket{
+            #[cfg(feature = "verbose")]
+            
             assert_resource(&bucket.resource_address(), &self.underlying_token);
             let (_, _, value_per_unit) = self.get_values();
             let mut validator: Global<Validator> = Global::from(validator_addr);

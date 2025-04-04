@@ -74,6 +74,8 @@ mod staking_earning {
         /// A FungibleBucket containing the claimed XRD.
         pub fn claim_xrd(&mut self, cdp_mgr: ComponentAddress, claim_nfts: Vec<NonFungibleBucket>) -> FungibleBucket {
 
+            #[cfg(feature = "verbose")]
+            let init = Runtime::get_fee_balance();
             let mut xrd_bucket = FungibleBucket::new(XRD);
             let mut matured_nft_cnt: usize = 0;
             let mut matured_claim_amount = Decimal::ZERO;
@@ -83,8 +85,12 @@ mod staking_earning {
             let mut unmatured_interest_amount = Decimal::ZERO;
             let current_epoch = Runtime::current_epoch().number();
             let cdp_mgr: Global<CollateralDebtManager> = Global::<CollateralDebtManager>::from(cdp_mgr);
+            #[cfg(feature = "verbose")]
+            info!("Gase used in claim_xrd init: {}", init- Runtime::get_fee_balance());
             
             for claim_nft in claim_nfts {
+                #[cfg(feature = "verbose")]
+                info!("Gase used in claim_xrd for claim_nft in claim_nfts: {}", init- Runtime::get_fee_balance());
                 let nft_addr = claim_nft.resource_address();
                 let mut validator: Global<Validator> = get_validator(nft_addr);
                 let nft_res_mgr = NonFungibleResourceManager::from(nft_addr);
@@ -93,14 +99,22 @@ mod staking_earning {
                 let unstake_data = nft_res_mgr.get_non_fungible_data::<UnstakeData>(nft_id.local_id());
                 let claim_epoch = unstake_data.claim_epoch.number();
                 if claim_epoch <= current_epoch {
+                    #[cfg(feature = "verbose")]
+                    info!("Gase used in claim_xrd validator.claim_xrd before: {}", init- Runtime::get_fee_balance());
                     xrd_bucket.put(validator.claim_xrd(claim_nft));
+                    #[cfg(feature = "verbose")]
+                    info!("Gase used in claim_xrd validator.claim_xrd after: {}", init- Runtime::get_fee_balance());
                     matured_nft_cnt += 1;
                     matured_claim_amount = matured_claim_amount.checked_add(unstake_data.claim_amount).unwrap();
                 }
                 else{
                     unmatured_claim_amount = unmatured_claim_amount.checked_add(unstake_data.claim_amount).unwrap();
                     
+                    #[cfg(feature = "verbose")]
+                    info!("Gase used in claim_xrd cdp_mgr.get_interest_rate before: {}", init- Runtime::get_fee_balance());
                     let (_, stable_rate, _) = cdp_mgr.get_interest_rate(XRD, unmatured_claim_amount);
+                    #[cfg(feature = "verbose")]
+                    info!("Gase used in claim_xrd cdp_mgr.get_interest_rate after: {}", init- Runtime::get_fee_balance());
                     let remain_epoch = claim_epoch - current_epoch;
                     let principal = calc_principal(
                         unstake_data.claim_amount,
@@ -119,7 +133,11 @@ mod staking_earning {
             if unmatured_claim_amount > Decimal::ZERO {
                 let claim_nft_cnt = unmatured_claim_nfts.len();
                 let borrow_amount = unmatured_claim_amount.checked_sub(unmatured_interest_amount).unwrap();
+                #[cfg(feature = "verbose")]
+                info!("Gase used in claim_xrd cdp_mgr.staking_borrow before: {}", init- Runtime::get_fee_balance());
                 xrd_bucket.put(cdp_mgr.staking_borrow(XRD, borrow_amount, unmatured_claim_nfts, interests));
+                #[cfg(feature = "verbose")]
+                info!("Gase used in claim_xrd cdp_mgr.staking_borrow after: {}", init- Runtime::get_fee_balance());
                 Runtime::emit_event(NftFasterRedeemEvent{
                     claim_amount: unmatured_claim_amount,
                     claim_nfts: claim_nft_cnt,
@@ -133,7 +151,7 @@ mod staking_earning {
                     claim_amount: matured_claim_amount,
                     claim_nfts: matured_nft_cnt,
                     current_epoch
-                })
+                });
             }
         
             xrd_bucket            
@@ -154,12 +172,16 @@ mod staking_earning {
         ///
         /// A FungibleBucket representing the user's contribution to the validator.
         pub fn join(&mut self, validator_addr: ComponentAddress, bucket: FungibleBucket) -> FungibleBucket{
+            #[cfg(feature = "verbose")]
+            let init = Runtime::get_fee_balance();
             assert!(
                 self.staking_pool.get_underlying_token() == bucket.resource_address(),
                 "Unsupported token type! Expected token: {:?}, but received token: {:?}",
                 self.staking_pool.get_underlying_token(),
                 bucket.resource_address()
             );
+            #[cfg(feature = "verbose")]
+            info!("Gase used in join staking_pool.contribute: {}", init- Runtime::get_fee_balance());
             self.staking_pool.contribute(bucket, validator_addr)
         }
 
@@ -181,8 +203,12 @@ mod staking_earning {
         /// A vector of Buckets, either containing the claimed XRD in 'faster' mode,
         /// or the claim NFTs in 'normal' mode.
         pub fn redeem(&mut self, cdp_mgr: ComponentAddress, validators: Vec<ComponentAddress>,  bucket: FungibleBucket, faster: bool) -> Vec<Bucket>{
+            #[cfg(feature = "verbose")]
+            let init = Runtime::get_fee_balance();
             let res_addr = bucket.resource_address();
             let amount = bucket.amount();
+            #[cfg(feature = "verbose")]
+            info!("Gase used in redeem 0 : {}", init- Runtime::get_fee_balance());
             let (claim_nft_buckets, xrd_amount) = if res_addr == self.dse_token {
                 // Redeem from the staking pool if the resource is the DSE token.
                 self.staking_pool.redeem(validators, bucket)
@@ -196,7 +222,8 @@ mod staking_earning {
                 let unstake_data = nft_res_mgr.get_non_fungible_data::<UnstakeData>(nft_id.local_id());
                 (vec![claim_nft], unstake_data.claim_amount)
             };
-            
+            #[cfg(feature = "verbose")]
+            info!("Gase used in redeem 2 : {}", init- Runtime::get_fee_balance());
             if faster {
                 let xrd_bucket = self.claim_xrd(cdp_mgr, claim_nft_buckets);
                 Runtime::emit_event(FasterRedeemEvent{
@@ -212,6 +239,8 @@ mod staking_earning {
                     res_addr,
                     amount
                 });
+                #[cfg(feature = "verbose")]
+                info!("Gase used in redeem 3 : {}", init- Runtime::get_fee_balance());
                 claim_nft_buckets.into_iter().map(|nft_bucket| nft_bucket.into()).collect()
             }
         }

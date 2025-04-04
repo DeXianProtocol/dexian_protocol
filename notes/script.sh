@@ -76,7 +76,7 @@ export ORACLE_COMPONENT=$oracle
 
 cd ../protocol
 cargo clean
-scrypto build
+scrypto build --features verbose
 result=$(resim publish ".")
 export pkg=$(echo $result | awk -F ": " '{print $2}')
 result=$(resim run < ../notes/replace_holder.sh ../notes/manifests/new_earning.rtm)
@@ -188,5 +188,4 @@ resim run < ../notes/replace_holder.sh ../notes/manifests/join.rtm
 
 export amount=100
 export faster=true
-#export dse="resource_sim1t56vy6c0ulajlqmv6xfy6kjkg5v3j6daslcthuczanhyxqlqzktk8l"
 resim run < ../notes/replace_holder.sh ../notes/manifests/redeem_dse.rtm

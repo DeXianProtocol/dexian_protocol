@@ -573,7 +573,7 @@ mod lend_pool {
                 if *epoch > current_epoch {
                     break;
                 }
-                if let Some(entry) = self.bonds.remove(epoch) {
+                if let Some(mut entry) = self.bonds.remove(epoch) {
                     interest = interest.checked_add(entry.interest).unwrap();
                     let nft_ids = entry.global_id_list.range(0, entry.global_id_list.len());
                     if !nft_ids.is_empty() {
@@ -587,6 +587,7 @@ mod lend_pool {
                             self.vault.put(claim_bucket);
                         }
                     }
+                    entry.global_id_list.clear();
                 }
                 self.bond_epochs.remove(0);
             }

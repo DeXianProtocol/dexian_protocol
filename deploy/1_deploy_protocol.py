@@ -431,7 +431,8 @@ async def main():
                     'CollateralDebtManager',
                     'instantiate',
                     [
-                        manifest_owner_role
+                        manifest_owner_role,
+                        ret.ManifestBuilderValue.ADDRESS_VALUE(ret.ManifestBuilderAddress.STATIC(ret.Address(earning_component)))
                     ]
                 )
                 payload, intent = await gateway.build_transaction(builder, public_key, private_key)
@@ -564,7 +565,6 @@ async def create_usdx_pool(
                     Decimal("0.02")
                     Decimal("0.10")
                     Decimal("0.001")
-                    None
                 ;
             '''
         #print(manifest)
@@ -624,7 +624,6 @@ async def create_xrd_pool(
                     Decimal("0.02")
                     Decimal("0.10")
                     Decimal("0.001")
-                    Some(Address("{earning}"))
                 ;
             '''
         #print(manifest)

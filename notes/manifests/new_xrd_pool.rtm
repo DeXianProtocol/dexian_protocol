@@ -25,10 +25,11 @@ CALL_METHOD
     )
     18u8
     Address("${xrd}")
-    Enum<0u8>()
+    Enum<2u8>()
     Decimal("0.85")
     Decimal("0.87")
     Decimal("0.02")
     Decimal("0.10")
     Decimal("0.001")
+
 ;

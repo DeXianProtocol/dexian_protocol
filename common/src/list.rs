@@ -41,6 +41,15 @@ impl<T: ScryptoSbor + Clone> List<T> {
         self.kvs.insert(index, item);
     }
 
+    pub fn clear(&mut self) {
+        // Clear the list by removing all items
+        // from the KeyValueStore
+        for i in 0..self.pointer {
+            self.kvs.remove(&i);
+        }
+        self.pointer = 0;
+    }
+
     pub fn range(&self, start: ListIndex, end: ListIndex) -> Vec<T> {
         let mut result = Vec::new();
         for i in start..end {

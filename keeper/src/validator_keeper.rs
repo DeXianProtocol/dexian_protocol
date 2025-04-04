@@ -67,7 +67,7 @@ mod validator_keeper{
                     fill_validator_staking => Free, locked;
                     log_validator_staking => Free, locked;
                     insert_validator_staking => Free, locked;
-                    get_active_set_apy => Usd(dec!(0.1)), updatable;
+                    get_active_set_apy => Free, updatable;
                 }
             })
             .globalize();

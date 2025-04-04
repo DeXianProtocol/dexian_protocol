@@ -26,6 +26,9 @@ overflow-checks = true # Panic in the case of an overflow.
 
 [features]
 default = []
+verbose = []
+mainnet = []
+stokenet = []
 
 [lib]
 crate-type = ["cdylib", "lib"]
