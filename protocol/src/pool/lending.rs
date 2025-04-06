@@ -13,6 +13,14 @@ pub struct FixedEpochBond {
     pub global_id_list: List<NonFungibleGlobalId>
 }
 
+impl FixedEpochBond {
+    pub fn clear(&mut self) {
+        // self.epoch_at = 0;
+        self.interest = Decimal::ZERO;
+        self.global_id_list.clear();
+    }
+}
+
 #[blueprint]
 #[types(
     ListIndex,
@@ -573,7 +581,7 @@ mod lend_pool {
                 if *epoch > current_epoch {
                     break;
                 }
-                if let Some(mut entry) = self.bonds.remove(epoch) {
+                if let Some(mut entry) = self.bonds.get_mut(epoch) {
                     interest = interest.checked_add(entry.interest).unwrap();
                     let nft_ids = entry.global_id_list.range(0, entry.global_id_list.len());
                     if !nft_ids.is_empty() {
@@ -587,8 +595,9 @@ mod lend_pool {
                             self.vault.put(claim_bucket);
                         }
                     }
-                    entry.global_id_list.clear();
+                    entry.clear();
                 }
+                // self.bonds.remove(epoch);
                 self.bond_epochs.remove(0);
             }
             
